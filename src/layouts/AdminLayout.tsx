@@ -1,0 +1,86 @@
+import React, { useState } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { ProLayout } from '@ant-design/pro-components';
+import { Dropdown } from 'antd';
+import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import { useAuthStore } from '../store/useAuthStore';
+import { authService } from '../services/auth.service';
+
+const AdminLayout: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout } = useAuthStore();
+  const [pathname, setPathname] = useState(location.pathname);
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (e) {
+      console.error(e);
+    }
+    logout();
+    navigate('/login');
+  };
+
+  return (
+    <div id="test-pro-layout" style={{ height: '100vh', overflow: 'auto' }}>
+      <ProLayout
+        title="Cinema Admin"
+        logo="https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg"
+        layout="mix"
+        splitMenus={false}
+        fixSiderbar
+        route={{
+          path: '/admin',
+          routes: [
+            {
+              path: '/admin/users',
+              name: 'Users Management',
+              icon: <UserOutlined />,
+            },
+          ],
+        }}
+        location={{
+          pathname,
+        }}
+        menuItemRender={(item, dom) => (
+          <div
+            onClick={() => {
+              setPathname(item.path || '/admin');
+              navigate(item.path || '/admin');
+            }}
+          >
+            {dom}
+          </div>
+        )}
+        avatarProps={{
+          src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
+          title: user?.name || user?.login || 'Admin',
+          size: 'small',
+          render: (_props, dom) => {
+            return (
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: 'logout',
+                      icon: <LogoutOutlined />,
+                      label: 'Logout',
+                      onClick: handleLogout,
+                    },
+                  ],
+                }}
+              >
+                {dom}
+              </Dropdown>
+            );
+          },
+        }}
+      >
+        <Outlet />
+      </ProLayout>
+    </div>
+  );
+};
+
+export default AdminLayout;

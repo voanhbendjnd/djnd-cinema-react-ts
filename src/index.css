@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Outfit', sans-serif;
+  background-color: #050505;
+  color: #fff;
+}
+
+h1, h2, h3, h4, h5, h6, .cinema-title {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(20, 20, 20, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Custom inputs for dark luxury theme */
+.ant-input, .ant-input-password {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border-color: rgba(255, 215, 0, 0.2) !important;
+  color: #fff !important;
+}
+
+.ant-input:focus, .ant-input-password:focus, .ant-input-affix-wrapper:focus-within {
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+}
+
+.ant-input-prefix {
+  color: #ffd700 !important;
+}
+
+/* Override Antd Button */
+.ant-btn-primary {
+  background: linear-gradient(135deg, #ffd700 0%, #d4af37 100%) !important;
+  border: none !important;
+  color: #000 !important;
+  font-weight: 600 !important;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #ffe55c 0%, #ffd700 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+}
+
+.ant-btn-primary:active {
+  transform: translateY(1px);
+}
+
+.auth-bg {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.15) 0%, transparent 50%),
+    url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.auth-bg::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(to bottom, rgba(5, 5, 5, 0.8) 0%, rgba(5, 5, 5, 0.95) 100%);
+}
+
+.auth-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  padding: 20px;
+}

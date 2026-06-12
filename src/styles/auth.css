@@ -1,0 +1,44 @@
+.ant-input,
+.ant-input-password {
+    background: #2a2a2a !important;
+    color: white !important;
+}
+
+.ant-input::placeholder {
+    color: #888 !important;
+}
+
+.ant-input-affix-wrapper {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+}
+
+.ant-input-affix-wrapper:hover {
+    border-color: #666 !important;
+}
+
+.ant-input-affix-wrapper-focused {
+    border-color: #ff5500 !important;
+    box-shadow: none !important;
+}
+
+.ant-input-prefix,
+.ant-input-password-icon {
+    color: #aaa !important;
+}
+.ant-input {
+    background: #2a2a2a !important;
+    color: #fff !important;
+}
+/* Chrome / Edge Autofill Fix */
+.ant-input-affix-wrapper input:-webkit-autofill,
+.ant-input-affix-wrapper input:-webkit-autofill:hover,
+.ant-input-affix-wrapper input:-webkit-autofill:focus,
+.ant-input-affix-wrapper input:-webkit-autofill:active {
+    -webkit-text-fill-color: #fff !important;
+
+    box-shadow: 0 0 0 30px #2a2a2a inset !important;
+    -webkit-box-shadow: 0 0 0 30px #2a2a2a inset !important;
+
+    caret-color: #fff !important;
+}
