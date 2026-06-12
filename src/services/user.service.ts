@@ -26,3 +26,14 @@ export const userService = {
     return axiosClient.delete(`/api/v1/admin/users/${login}`);
   }
 };
+
+export const adminUserService = {
+  createUserAdmin: (payload: AdminUserDTO) => {
+    return axiosClient.post<AdminUserDTO>('/api/v1/admin/users', payload);
+  },
+
+  // Optional helpers if you build a role select that fetches from backend
+  getRoles: () => {
+    return axiosClient.get('/api/v1/admin/roles');
+  },
+};

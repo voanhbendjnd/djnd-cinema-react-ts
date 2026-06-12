@@ -5,9 +5,10 @@ import AuthLayout from '../layouts/AuthLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
-import UserManagement from '../pages/admin/UserManagement';
+import UserManagement from '../pages/admin/user/UserManagement.tsx';
 import { useAuthStore } from '../store/useAuthStore';
 import ActivateAccount from "../pages/account/activated.account.tsx";
+import ResetPasswordFinish from "../pages/account/reset.passowrd.finish.tsx";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, role } = useAuthStore();
@@ -20,6 +21,10 @@ const AppRoutes: React.FC = () => {
           <Route
               path="/account/activate"
               element={<ActivateAccount />}
+          />
+          <Route
+              path="/account/reset/finish"
+              element={<ResetPasswordFinish/>}
           />
       </Route>
 
