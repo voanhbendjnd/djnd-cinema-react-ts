@@ -1,4 +1,5 @@
 import axiosClient from './axiosClient';
+import type {AdminUserDTO} from "../types/user.types.ts";
 
 export const userService = {
   getUsers: async (params: { current?: number; pageSize?: number; q?: string }): Promise<IBackendRes<IModelPaginate<IAccount>>> => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState } from 'react';
 import {
     Form,
     Input,
@@ -19,17 +19,39 @@ import {
     PhoneOutlined,
     SafetyOutlined,
 } from '@ant-design/icons';
-import {type AdminUserDTO, ROLE_LABELS, ROLE_OPTIONS} from "../../../types/user.types.ts";
+import {type AdminUserDTO} from "../../../types/user.types.ts";
 import {adminUserService} from "../../../services/user.service.ts";
+import {type RoleUserDTO, roleService} from "../../../services/role.service.ts";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 interface Props {
     onClose?: () => void;
 }
+const { Option } = Select;
+
 const AdminCreateUser: React.FC<Props> = ({ onClose }) => {
     const [form] = Form.useForm();
+    const [roles, setRoles] = useState<RoleUserDTO[]>([]);
     const [loading, setLoading] = useState(false);
+
+
+
+    const fetchRoles = async () => {
+        try {
+            setLoading(true);
+            const res = await roleService.getAllRoles() as unknown as IBackendRes<RoleUserDTO>;
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            setRoles(res.data);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    useEffect(() => {
+        fetchRoles();
+    }, []);
     const onFinish = async (values: any) => {
         setLoading(true);
         try {
@@ -184,10 +206,14 @@ const AdminCreateUser: React.FC<Props> = ({ onClose }) => {
                                 label="Vai trò"
                                 rules={[{ required: true, message: 'Please select role' }]}
                             >
-                                <Select placeholder="Select role" suffixIcon={<SafetyOutlined />}>
-                                    {ROLE_OPTIONS.map((r) => (
-                                        <Option key={r.id} value={r.id}>
-                                            {ROLE_LABELS[r.name] ?? r.name}
+                                <Select
+                                    placeholder="Select role"
+                                    loading={loading}
+                                    suffixIcon={<SafetyOutlined />}
+                                >
+                                    {roles.map((role) => (
+                                        <Option key={role.id} value={role.id}>
+                                            {role.name}
                                         </Option>
                                     ))}
                                 </Select>

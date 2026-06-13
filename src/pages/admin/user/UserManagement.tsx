@@ -1,6 +1,6 @@
 import React, {useRef, useState} from 'react';
 import {type ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
-import {Button, message, Modal, Popconfirm} from 'antd';
+import {Button, Modal, notification, Popconfirm} from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { userService } from '../../../services/user.service.ts';
 import AdminCreateUser from "./admin.create.user.tsx";
@@ -8,6 +8,7 @@ import AdminCreateUser from "./admin.create.user.tsx";
 const UserManagement: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const [isOpenCreateUserAdmin, setOpenCreateUserAdmin] = useState<boolean>(false);
+  const [api, contextHolder] = notification.useNotification();
   const columns: ProColumns<IUser>[] = [
     {
       title: 'ID',
@@ -61,12 +62,19 @@ const UserManagement: React.FC = () => {
           onConfirm={async () => {
             try {
               await userService.deleteUser(record.login);
-              message.success('Deleted successfully');
+              api.success({
+                message:'Delete successfully',
+                placement: 'topRight'
+              })
               await actionRef.current?.reload();
             } catch (error: unknown) {
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              //@ts-expect-error
-              message.error(error.response?.data?.detail || 'Failed to delete');
+              api.error({
+                message: 'Failed to update',
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                //@ts-expect-error
+                description: error.response?.data?.message || 'Failed to delete',
+                placement: 'topRight'
+              });
             }
           }}
         >
@@ -78,6 +86,7 @@ const UserManagement: React.FC = () => {
 
   return (
       <>
+        {contextHolder}
         <ProTable<IUser>
             columns={columns}
             actionRef={actionRef}
@@ -112,12 +121,19 @@ const UserManagement: React.FC = () => {
               type: 'multiple',
               onSave: async (_rowKey, data) => {
                 try {
-                  await userService.updateUser(data);
-                  message.success('Updated successfully');
+                 await userService.updateUser(data);
+                  api.success({
+                    message:'Update successfully',
+                    placement: 'topRight'
+                  })
                 } catch (error: unknown) {
-                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                  //@ts-expect-error
-                  message.error(error.response?.data?.detail || 'Failed to update');
+                  api.error({
+                    message: 'Failed to update',
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    //@ts-expect-error
+                    description: error.response?.data?.message || 'Failed to update',
+                    placement: 'topRight'
+                  });
                   throw error;
                 }
               },
