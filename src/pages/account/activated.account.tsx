@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Result, Spin } from "antd";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { authService } from "../../services/auth.service";
+import { authService } from "@/services/auth.service";
 
 export default function ActivateAccount() {
     const [searchParams] = useSearchParams();

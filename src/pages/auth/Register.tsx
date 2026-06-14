@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {Form, Input, Button, Typography, Select, notification} from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
-import { authService } from '../../services/auth.service';
+import { authService } from '@/services/auth.service';
 
 const { Title, Text } = Typography;
 const { Option } = Select;

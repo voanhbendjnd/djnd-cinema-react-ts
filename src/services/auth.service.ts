@@ -1,4 +1,4 @@
-import axiosClient from './axiosClient';
+import axiosClient from '@/services/axiosClient';
 
 export const authService = {
   login: async (data: any): Promise<ILoginRes> => {

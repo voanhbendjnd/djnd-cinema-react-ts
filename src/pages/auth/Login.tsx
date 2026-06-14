@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Form, Input, Button, message, Typography, Alert } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
-import { authService } from '../../services/auth.service';
-import { useAuthStore } from '../../store/useAuthStore';
-import '../../styles/auth.css';
+import { authService } from '@/services/auth.service';
+import { useAuthStore } from '@/store/useAuthStore';
+import '@/styles/auth.css';
 const { Title, Text } = Typography;
 
 const Login: React.FC = () => {

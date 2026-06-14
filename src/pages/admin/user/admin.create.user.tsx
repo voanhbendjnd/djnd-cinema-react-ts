@@ -19,9 +19,9 @@ import {
     PhoneOutlined,
     SafetyOutlined,
 } from '@ant-design/icons';
-import {type AdminUserDTO} from "../../../types/user.types.ts";
-import {adminUserService} from "../../../services/user.service.ts";
-import {type RoleUserDTO, roleService} from "../../../services/role.service.ts";
+import {type AdminUserDTO} from "@/types/user.types.ts";
+import {adminUserService} from "@/services/user.service.ts";
+import {type RoleUserDTO, roleService} from "@/services/role.service.ts";
 
 const { Title, Text } = Typography;
 interface Props {

@@ -2,7 +2,7 @@ import React, {useRef, useState} from 'react';
 import {type ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
 import {Button, Modal, notification, Popconfirm} from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { userService } from '../../../services/user.service.ts';
+import { userService } from '@/services/user.service.ts';
 import AdminCreateUser from "./admin.create.user.tsx";
 
 const UserManagement: React.FC = () => {

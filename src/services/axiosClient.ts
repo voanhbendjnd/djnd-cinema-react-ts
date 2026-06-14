@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { useAuthStore } from '../store/useAuthStore';
+import { useAuthStore } from '@/store/useAuthStore';
 
 // Lấy base url từ environment hoặc dùng default
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+export const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const axiosClient = axios.create({
   baseURL,

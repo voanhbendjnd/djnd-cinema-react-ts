@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Typography, Result, Card } from 'antd';
 import { LockOutlined } from '@ant-design/icons';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import axiosClient from '../../services/axiosClient'; // adjust to your axios instance path
+import axiosClient from '@/services/axiosClient'; // adjust to your axios instance path
 
 const { Title, Text } = Typography;
 

@@ -1,14 +1,16 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from '../components/ProtectedRoute';
-import AuthLayout from '../layouts/AuthLayout';
-import AdminLayout from '../layouts/AdminLayout';
-import Login from '../pages/auth/Login';
-import Register from '../pages/auth/Register';
-import UserManagement from '../pages/admin/user/UserManagement.tsx';
-import { useAuthStore } from '../store/useAuthStore';
-import ActivateAccount from "../pages/account/activated.account.tsx";
-import ResetPasswordFinish from "../pages/account/reset.passowrd.finish.tsx";
+import ProtectedRoute from '@/components/protected.route.tsx';
+import AuthLayout from '@/layouts/auth.layout.tsx';
+import AdminLayout from '@/layouts/admin.layout.tsx';
+import Login from '@/pages/auth/Login';
+import Register from '@/pages/auth/Register';
+import UserManagement from '@/pages/admin/user/user.management.tsx';
+import MovieManagement from '@/pages/admin/movie/movie.management.tsx';
+import { useAuthStore } from '@/store/useAuthStore';
+import ActivateAccount from "@/pages/account/activated.account.tsx";
+import ResetPasswordFinish from "@/pages/account/reset.passowrd.finish.tsx";
+import MovieDetailPage from "@/pages/admin/movie/movie.detail.tsx";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, role } = useAuthStore();
@@ -33,6 +35,9 @@ const AppRoutes: React.FC = () => {
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
           <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/movies" element={<MovieManagement />} />
+            <Route path="/admin/movies/:id" element={<MovieDetailPage />} />
+
         </Route>
       </Route>
 

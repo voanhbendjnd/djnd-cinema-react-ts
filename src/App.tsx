@@ -2,7 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
 import { ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
 import enUS from 'antd/locale/en_US';
-import AppRoutes from './routes/AppRoutes';
+import AppRoutes from './routes/app.route.tsx';
 
 function App() {
   return (

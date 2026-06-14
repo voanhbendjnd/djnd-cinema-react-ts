@@ -1,0 +1,9 @@
+/* Movie poster upload card - portrait ratio 2:3 (like a real movie poster) */
+.avatar-uploader-poster .ant-upload.ant-upload-select {
+    width: 160px !important;
+    height: 240px !important; /* 160 * 3/2 = 240 -> 2:3 */
+}
+
+.avatar-uploader-poster .ant-upload.ant-upload-select img {
+    display: block;
+}
