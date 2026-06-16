@@ -105,10 +105,10 @@ const AdminCreateUser: React.FC<Props> = ({ onClose }) => {
     return (
         <div style={{ padding: 24, maxWidth: 720, margin: '0 auto' }}>
             <Title level={3} style={{ marginBottom: 4 }}>
-                Create user
+                Create employee
             </Title>
             <Text type="secondary" style={{ display: 'block', marginBottom: 24 }}>
-                Email activated and reset password will send auto for user
+                Email activated and reset password will send auto for employee
             </Text>
 
             <Card>
@@ -158,7 +158,7 @@ const AdminCreateUser: React.FC<Props> = ({ onClose }) => {
                         <Col span={12}>
                             <Form.Item
                                 name="name"
-                                label="Họ và tên"
+                                label="Name"
                                 rules={[
                                     { required: true, message: 'Please enter full name!' },
                                     { min: 2, max: 100, message: 'Name min 2 and max 100 characters!' },
@@ -172,7 +172,7 @@ const AdminCreateUser: React.FC<Props> = ({ onClose }) => {
                         <Col span={12}>
                             <Form.Item
                                 name="phone"
-                                label="Số điện thoại"
+                                label="Phone"
                                 rules={[
                                     {
                                         pattern: /^0\d{9,10}$/,
@@ -189,7 +189,7 @@ const AdminCreateUser: React.FC<Props> = ({ onClose }) => {
                         <Col span={12}>
                             <Form.Item
                                 name="gender"
-                                label="Giới tính"
+                                label="Gender"
                                 rules={[{ required: true, message: 'Please select gender!' }]}
                             >
                                 <Select placeholder="Select gender">
@@ -203,7 +203,7 @@ const AdminCreateUser: React.FC<Props> = ({ onClose }) => {
                         <Col span={12}>
                             <Form.Item
                                 name="roleId"
-                                label="Vai trò"
+                                label="Role"
                                 rules={[{ required: true, message: 'Please select role' }]}
                             >
                                 <Select

@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { ProLayout } from '@ant-design/pro-components';
 import { Dropdown } from 'antd';
-import { UserOutlined, LogoutOutlined, VideoCameraOutlined } from '@ant-design/icons';
+import {
+  UserOutlined,
+  LogoutOutlined,
+  VideoCameraOutlined,
+  MedicineBoxOutlined
+} from '@ant-design/icons';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authService } from '@/services/auth.service';
 
@@ -42,6 +47,11 @@ const AdminLayout: React.FC = () => {
               path: '/admin/movies',
               name: 'Movies Management',
               icon: <VideoCameraOutlined />,
+            },
+            {
+              path: '/admin/rooms',
+              name: 'Rooms Management',
+              icon: <MedicineBoxOutlined />,
             },
           ],
         }}

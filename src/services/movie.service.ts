@@ -1,5 +1,6 @@
 import axiosClient from '@/services/axiosClient';
 import type { AdminMovieDTO } from '@/types/movie.types';
+import type {RoomDTO} from "@/types/room.types.ts";
 
 export const movieService = {
   uploadTempFile: async (file: File): Promise<string> => {
@@ -25,6 +26,11 @@ export const movieService = {
   fetchMovieById: async (id:number): Promise<IBackendRes<AdminMovieDTO>> => {
     const response = await axiosClient.get(`/api/v1/admin/movies/${id}`);
     return response as unknown as IBackendRes<AdminMovieDTO>;
+  },
+  getRoomsForMovie: async ():Promise<IBackendRes<RoomDTO>> => {
+    const response = await axiosClient.get('/api/v1/admin/movies/rooms');
+
+          return response as unknown as IBackendRes<RoomDTO>;
   },
 
   fetchAllMovieWithPagination: async (q: string, page: number, size: number, sort:string): Promise<IBackendRes<IModelPaginate<AdminMovieDTO>>> => {

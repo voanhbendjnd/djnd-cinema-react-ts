@@ -93,7 +93,7 @@ const MovieDetailPage: React.FC = () => {
                 onClick={() => navigate(-1)}
                 style={{ marginBottom: 16, paddingLeft: 0 }}
             >
-                Quay lại
+                Back
             </Button>
 
             <Card bordered styles={{ body: { padding: 0 } }}>
@@ -194,7 +194,7 @@ const MovieDetailPage: React.FC = () => {
 
                         <div style={{ marginTop: 16 }}>
                             <Text strong style={{ display: 'block', marginBottom: 8, color: 'rgba(255,255,255,0.92)' }}>
-                                Mô tả
+                                Description
                             </Text>
                             <Paragraph style={{ color: 'rgba(255,255,255,0.65)', whiteSpace: 'pre-line' }}>
                                 {movie.description || 'No description available'}
