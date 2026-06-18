@@ -67,6 +67,7 @@ declare global{
         gender?: string;
         langKey?: string;
         authorities?: string[];
+        activated:boolean;
     }
 
     // interface ResLoginDTO {

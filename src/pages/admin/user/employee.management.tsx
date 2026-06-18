@@ -5,7 +5,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import { userService } from '@/services/user.service.ts';
 import AdminCreateUser from "./admin.create.user.tsx";
 
-const UserManagement: React.FC = () => {
+const EmployeeManagement: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const [isOpenCreateUserAdmin, setOpenCreateUserAdmin] = useState<boolean>(false);
   const [api, contextHolder] = notification.useNotification();
@@ -42,6 +42,14 @@ const UserManagement: React.FC = () => {
         OTHER: { text: 'Other' },
       },
       search: false,
+    },
+    {
+      title:"Status",
+      dataIndex: 'activated',
+      valueEnum:{
+        true:{text:'Activated'},
+        false:{text:'Deactivated'},
+      }
     },
     {
       title: 'Action',
@@ -97,7 +105,7 @@ const UserManagement: React.FC = () => {
                 params
             ) => {
               try {
-                const res = await userService.getUsers({
+                const res = await userService.getEmployees({
                   current: params.current,
                   pageSize: params.pageSize,
                   q: params.login || params.name || params.email, // Lấy tạm theo keyword map
@@ -186,4 +194,4 @@ const UserManagement: React.FC = () => {
   );
 };
 
-export default UserManagement;
+export default EmployeeManagement;

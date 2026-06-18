@@ -1,5 +1,5 @@
 import axiosClient from '@/services/axiosClient';
-import type { AdminMovieDTO } from '@/types/movie.types';
+import type {AdminMovieDTO, ComplexShowtimeRequestDTO} from '@/types/movie.types';
 import type {RoomDTO} from "@/types/room.types.ts";
 
 export const movieService = {
@@ -23,9 +23,9 @@ export const movieService = {
     const response = await axiosClient.put('/api/v1/admin/movies', data);
     return response as unknown as IBackendRes<AdminMovieDTO>;
   },
-  fetchMovieById: async (id:number): Promise<IBackendRes<AdminMovieDTO>> => {
+  fetchMovieById: async (id:number): Promise<IBackendRes<ComplexShowtimeRequestDTO>> => {
     const response = await axiosClient.get(`/api/v1/admin/movies/${id}`);
-    return response as unknown as IBackendRes<AdminMovieDTO>;
+    return response as unknown as IBackendRes<ComplexShowtimeRequestDTO>;
   },
   getRoomsForMovie: async ():Promise<IBackendRes<RoomDTO>> => {
     const response = await axiosClient.get('/api/v1/admin/movies/rooms');
@@ -33,10 +33,10 @@ export const movieService = {
           return response as unknown as IBackendRes<RoomDTO>;
   },
 
-  fetchAllMovieWithPagination: async (q: string, page: number, size: number, sort:string): Promise<IBackendRes<IModelPaginate<AdminMovieDTO>>> => {
+  fetchAllMovieWithPagination: async (q: string, page: number, size: number, sort:string): Promise<IBackendRes<IModelPaginate<ComplexShowtimeRequestDTO>>> => {
     const response = await axiosClient.get('/api/v1/admin/movies', {
       params: { q, page, size, sort },
     });
-    return response as unknown as IBackendRes<IModelPaginate<AdminMovieDTO>>;
+    return response as unknown as IBackendRes<IModelPaginate<ComplexShowtimeRequestDTO>>;
   },
 };

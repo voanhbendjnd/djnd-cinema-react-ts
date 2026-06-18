@@ -39,8 +39,13 @@ const AdminLayout: React.FC = () => {
           path: '/admin',
           routes: [
             {
-              path: '/admin/users',
-              name: 'Users Management',
+              path: '/admin/employees',
+              name: 'Employee Management',
+              icon: <UserOutlined />,
+            },
+            {
+              path: '/admin/customers',
+              name: 'Customer Management',
               icon: <UserOutlined />,
             },
             {

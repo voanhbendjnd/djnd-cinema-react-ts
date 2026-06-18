@@ -3,10 +3,8 @@ import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import {Button, message, Tag} from 'antd';
 import {EyeOutlined, PlusOutlined} from '@ant-design/icons';
-import { MovieStatus } from '@/types/movie.types';
-import type { AdminMovieDTO } from '@/types/movie.types';
+import {type ComplexShowtimeRequestDTO, MovieStatus} from '@/types/movie.types';
 import { movieService } from '@/services/movie.service';
-// import { baseURL } from '../../../services/axiosClient';
 import MovieCreateModal from './components/movie.create.modal.tsx';
 import dayjs from 'dayjs';
 import MovieUpdateModal from "./components/movie.update.modal.tsx";
@@ -17,8 +15,8 @@ const MovieManagement: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const navigate = useNavigate();
-  const [selectedMovie, setSelectedMovie] = useState<AdminMovieDTO | null>(null);
-  const columns: ProColumns<AdminMovieDTO>[] = [
+  const [selectedMovie, setSelectedMovie] = useState<ComplexShowtimeRequestDTO | null>(null);
+  const columns: ProColumns<ComplexShowtimeRequestDTO>[] = [
     {
       title: 'ID',
       dataIndex: 'id',
@@ -109,7 +107,7 @@ const MovieManagement: React.FC = () => {
 
   return (
       <>
-        <ProTable<AdminMovieDTO>
+        <ProTable<ComplexShowtimeRequestDTO>
             columns={columns}
             actionRef={actionRef}
             cardBordered

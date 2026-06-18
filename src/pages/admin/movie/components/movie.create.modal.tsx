@@ -56,7 +56,7 @@ interface MovieCreateModalProps {
   onSuccess: () => void;
 }
 
-const STEPS = ['Thông tin phim', 'Chọn phòng & Lịch chiếu', 'Xác nhận'];
+const STEPS = ['Movie information', 'Choose room & Schedule', 'Confirm'];
 
 // ─────────────────────────────────────────────────────────────
 // Sub-component: Lịch chiếu cho 1 phòng
@@ -120,7 +120,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
     const timeStr = time.format('HH:mm');
     const day = schedule.days.find((d) => d.date === dateStr)!;
     if (day.startTimes.includes(timeStr)) {
-      message.warning('Giờ này đã có!');
+      message.warning('This time already exist!');
       return;
     }
     updateTimes(dateStr, [...day.startTimes, timeStr]);
@@ -142,7 +142,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
           }
           extra={
             <Button size="small" danger icon={<DeleteOutlined />} onClick={onRemove}>
-              Bỏ chọn
+              Deselect
             </Button>
           }
           style={{ marginBottom: 12 }}
@@ -155,10 +155,10 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
             style={{ marginBottom: 12 }}
         >
           <Radio.Button value="preset">
-            <ThunderboltOutlined /> Chọn khung giờ hot
+            <ThunderboltOutlined /> Select hot time
           </Radio.Button>
           <Radio.Button value="manual">
-            <EditOutlined /> Nhập tay
+            <EditOutlined /> Input
           </Radio.Button>
         </Radio.Group>
 
@@ -166,7 +166,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
         <div style={{ marginBottom: 12 }}>
           <DatePicker
               size="small"
-              placeholder="Thêm ngày chiếu"
+              placeholder="Add date time"
               disabledDate={(d) => d && d < dayjs().startOf('day')}
               onChange={addDay}
               value={null}
@@ -177,7 +177,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
         {/* Days */}
         {schedule.days.length === 0 && (
             <Text type="secondary" style={{ fontSize: 12 }}>
-              Chưa có ngày chiếu. Chọn ngày bên trên để thêm.
+              Not found date time, choose date time above
             </Text>
         )}
 
@@ -274,7 +274,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
                       <TimePicker
                           size="small"
                           format="HH:mm"
-                          placeholder="Chọn giờ rồi Enter"
+                          placeholder="Select hour & enter"
                           minuteStep={5}
                           onSelect={(time) => addManualTime(day.date, time)}
                           value={null}
@@ -315,7 +315,7 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
       movieService
           .getRoomsForMovie()
           .then((res: any) => setAvailableRooms(res?.data ?? res ?? []))
-          .catch(() => message.error('Không thể tải danh sách phòng'))
+          .catch(() => message.error('Not found rooms'))
           .finally(() => setRoomsLoading(false));
     }
   }, [open, currentStep]);
@@ -345,13 +345,13 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
       const tempUrl = await movieService.uploadTempFile(file as File);
       setImageUrl(tempUrl);
       uploadSuccess(tempUrl);
-      api.success({ message: 'Upload ảnh thành công!', placement: 'topRight' });
+      // api.success({ message: 'Upload ảnh thành công!', placement: 'topRight' });
     } catch (error: any) {
       onError(error);
       api.error({
-        message: 'Upload thất bại!',
+        message: 'Upload poster failure!',
         placement: 'topRight',
-        description: error.response?.data?.message || 'Lỗi không xác định',
+        description: error.response?.data?.message || 'undefine',
       });
     } finally {
       setImageLoading(false);
@@ -390,7 +390,7 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
   // ── Submit ──
   const handleSubmit = async () => {
     if (!imageUrl) {
-      message.error('Vui lòng upload ảnh poster!');
+      message.error('Please upload poster!');
       setCurrentStep(0);
       return;
     }
@@ -406,14 +406,14 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
       };
 
       await movieService.createMovie(payload as any);
-      api.success({ message: 'Tạo phim & lịch chiếu thành công!', placement: 'topRight' });
+      api.success({ message: 'Create movie success', placement: 'topRight' });
       resetAll();
       onSuccess();
     } catch (error: any) {
       api.error({
-        message: 'Tạo phim thất bại!',
+        message: 'Failure',
         placement: 'topRight',
-        description: error.response?.data?.message || 'Lỗi không xác định',
+        description: error.response?.data?.message || 'undefine',
       });
     } finally {
       setSubmitting(false);
@@ -427,48 +427,48 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
           <div style={{ flex: 1 }}>
             <ProFormText
                 name="title"
-                label="Tên phim"
-                placeholder="Nhập tên phim"
-                rules={[{ required: true, message: 'Tên phim không được trống!' }]}
+                label="Movie title"
+                placeholder="Input title"
+                rules={[{ required: true, message: 'Title is required' }]}
             />
             <ProFormTextArea
                 name="description"
-                label="Mô tả"
-                placeholder="Nhập mô tả phim"
+                label="Description"
+                placeholder="Input description"
                 fieldProps={{ rows: 3 }}
             />
             <ProFormDigit
                 name="durationMinutes"
-                label="Thời lượng (phút)"
-                placeholder="VD: 120"
+                label="Duration (minutes)"
+                placeholder="EX: 120"
                 min={1}
-                rules={[{ required: true, message: 'Thời lượng không được trống!' }]}
+                rules={[{ required: true, message: 'Duration is required' }]}
             />
-            <ProFormText name="director" label="Đạo diễn" placeholder="Tên đạo diễn" />
+            <ProFormText name="director" label="Director" placeholder="Director" />
           </div>
           <div style={{ flex: 1 }}>
             <ProFormSelect
                 name="genre"
-                label="Thể loại"
+                label="Genre"
                 options={Object.values(MovieGenre).map((g) => ({ label: g, value: g }))}
-                rules={[{ required: true, message: 'Vui lòng chọn thể loại!' }]}
+                rules={[{ required: true, message: 'Please select genre' }]}
             />
             <ProFormDateTimePicker
                 name="releaseDate"
-                label="Ngày khởi chiếu"
+                label="Release date"
                 fieldProps={{
                   disabledDate: (current) => current && current < dayjs().startOf('day'),
                 }}
-                rules={[{ required: true, message: 'Vui lòng chọn ngày khởi chiếu!' }]}
+                rules={[{ required: true, message: 'Release date is required' }]}
             />
             <ProFormSelect
                 name="status"
-                label="Trạng thái"
+                label="Status"
                 options={Object.values(MovieStatus).map((s) => ({ label: s, value: s }))}
-                rules={[{ required: true, message: 'Vui lòng chọn trạng thái!' }]}
+                rules={[{ required: true, message: 'Status is required' }]}
             />
             <div style={{ marginBottom: 8 }}>
-              <label style={{ display: 'block', marginBottom: 8 }}>Ảnh poster *</label>
+              <label style={{ display: 'block', marginBottom: 8 }}>Image poster *</label>
               <ImgCrop rotationSlider aspect={2 / 3}>
                 <Upload
                     name="file"
@@ -502,11 +502,11 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
   const renderStep1 = () => (
       <div>
         {/* Room checkboxes */}
-        <Text strong>Chọn phòng chiếu:</Text>
+        <Text strong>Select rooms:</Text>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '10px 0 18px' }}>
-          {roomsLoading && <Text type="secondary">Đang tải danh sách phòng...</Text>}
+          {roomsLoading && <Text type="secondary">Loading...</Text>}
           {!roomsLoading && availableRooms.length === 0 && (
-              <Text type="secondary">Không có phòng nào khả dụng</Text>
+              <Text type="secondary">Not found any room</Text>
           )}
           {availableRooms.map((room) => {
             const checked = roomSchedules.has(room.id);
@@ -536,7 +536,7 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
         {roomSchedules.size === 0 ? (
             <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Chọn ít nhất 1 phòng để cấu hình lịch chiếu"
+                description="Select 1 or many room for create screenings"
             />
         ) : (
             Array.from(roomSchedules.entries()).map(([roomId, schedule]) => {
@@ -562,18 +562,18 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
     );
     return (
         <div>
-          <Title level={5}>Thông tin phim</Title>
+          <Title level={5}>Information movie</Title>
           <Card size="small" style={{ marginBottom: 16 }}>
             <Space direction="vertical" size={2}>
               <Text>🎬 <strong>{movieFields.title}</strong></Text>
-              <Text>⏱ {movieFields.durationMinutes} phút</Text>
+              <Text>⏱ {movieFields.durationMinutes} minutes</Text>
               <Text>🎭 {movieFields.genre} · {movieFields.status}</Text>
-              <Text>🎬 Đạo diễn: {movieFields.director || '-'}</Text>
-              <Text>📅 Khởi chiếu: {movieFields.releaseDate ? dayjs(movieFields.releaseDate as any).format('DD/MM/YYYY HH:mm') : '-'}</Text>
+              <Text>🎬 Director: {movieFields.director || '-'}</Text>
+              <Text>📅 Release date: {movieFields.releaseDate ? dayjs(movieFields.releaseDate as any).format('DD/MM/YYYY HH:mm') : '-'}</Text>
             </Space>
           </Card>
 
-          <Title level={5}>Lịch chiếu ({totalShowtimes} suất)</Title>
+          <Title level={5}>Schedule({totalShowtimes} screenings)</Title>
           {Array.from(roomSchedules.entries()).map(([roomId, schedule]) => {
             const room = availableRooms.find((r) => r.id === roomId)!;
             return (
@@ -606,7 +606,7 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
       <>
         {contextHolder}
         <ModalForm<AdminMovieDTO>
-            title="Tạo phim mới"
+            title="Create movie"
             open={open}
             onOpenChange={(visible) => { if (!visible) handleClose(); }}
             modalProps={{
@@ -616,9 +616,35 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
             }}
             submitter={false}
             onFinish={async (values) => {
-              // Step 0 -> 1: snapshot form values and move to next step
               setMovieFields({ ...values, releaseDate: values.releaseDate as any });
-              setCurrentStep(1);
+
+              if (values.status === MovieStatus.SHOWING) {
+                setCurrentStep(1);
+              } else {
+                try {
+                  await movieService.createMovie({
+                    ...values,
+                    posterUrl: imageUrl,
+                    releaseDate: dayjs(values.releaseDate).format('YYYY-MM-DDTHH:mm:ss'),
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-expect-error
+                    rooms: [],
+                  });
+                  api.success({message :'Create movie successfully!', placement:'topRight'});
+                  resetAll();
+                  onSuccess();
+                  onClose();
+                } catch (error) {
+                  api.error({
+                    message:'Create movie failure!',
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    //@ts-expect-error
+                    description: error.response?.data?.message || 'Failed to create',
+                    placement:'topRight',
+                  })
+                }
+              }
+
               return false;
             }}
         >
@@ -629,6 +655,9 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
               items={STEPS.map((title) => ({ title }))}
               style={{ marginBottom: 24 }}
           />
+          <Text type="secondary" style={{ display: 'block', marginBottom: 24 }}>
+            If the film is in showing mode, then the screening schedule for the rooms can be determined.
+          </Text>
 
           {/* Step content */}
           {currentStep === 0 && renderStep0()}
@@ -639,7 +668,7 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
           <Divider />
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <Button onClick={currentStep === 0 ? handleClose : () => setCurrentStep((s) => s - 1)}>
-              {currentStep === 0 ? 'Đóng' : '← Quay lại'}
+              {currentStep === 0 ? 'Close' : '← Back'}
             </Button>
 
             <Space>
@@ -648,18 +677,18 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
                       type="primary"
                       htmlType="submit"
                   >
-                    Tiếp theo →
+                    Done →
                   </Button>
               )}
 
               {currentStep === 1 && (
-                  <Tooltip title={!step2Valid() ? 'Mỗi phòng cần có ít nhất 1 ngày và mỗi ngày ít nhất 1 giờ chiếu' : ''}>
+                  <Tooltip title={!step2Valid() ? 'Each room needs at least one day of screening, and at least one hour of screening per day.' : ''}>
                     <Button
                         type="primary"
                         disabled={!step2Valid()}
                         onClick={() => setCurrentStep(2)}
                     >
-                      Xem tóm tắt →
+                      View summary →
                     </Button>
                   </Tooltip>
               )}

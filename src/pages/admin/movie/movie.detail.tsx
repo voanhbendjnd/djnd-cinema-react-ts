@@ -1,34 +1,54 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
+    Button,
     Card,
     Image,
     Tag,
     Typography,
     Spin,
-    Button,
-    Descriptions,
     Empty,
     Space,
+    Descriptions,
+    Tabs,
+    Badge,
+    Tooltip,
+    Divider,
 } from 'antd';
 import {
     ArrowLeftOutlined,
+    EditOutlined,
     ClockCircleOutlined,
     CalendarOutlined,
     UserOutlined,
-    TagsOutlined,
+    HomeOutlined,
+    PlayCircleOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import {type AdminMovieDTO, MovieStatus} from "@/types/movie.types.ts";
-import {movieService} from "@/services/movie.service.ts";
-import {baseURL} from "@/services/axiosClient.ts";
+import 'dayjs/locale/en';
+import { movieService } from '@/services/movie.service';
+import type { ComplexShowtimeRequestDTO, DayScheduleDTO } from '@/types/movie.types';
+import { baseURL } from '@/services/axiosClient';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 const statusColor: Record<string, string> = {
-    [MovieStatus.SHOWING]: 'green',
-    [MovieStatus.UPCOMING]: 'blue',
-    [MovieStatus.ENDED]: 'red',
+    SHOWING: 'green',
+    UPCOMING: 'blue',
+    ENDED: 'red',
+};
+
+const genreColor: Record<string, string> = {
+    ACTION: 'volcano',
+    CARTOON: 'lime',
+    HORROR: 'purple',
+    FAMILY: 'cyan',
+    TRAGEDY: 'magenta',
+    HISTORICAL: 'gold',
+    DRAMA: 'geekblue',
+    COMEDY: 'orange',
+    MUSICAL: 'blue',
+    ROMANCE: 'pink',
 };
 
 const formatDuration = (minutes?: number) => {
@@ -40,27 +60,66 @@ const formatDuration = (minutes?: number) => {
     return `${h} giờ ${m} phút`;
 };
 
+// Format LocalTime from backend ("HH:mm:ss" or "HH:mm") to "HH:mm"
+const fmtTime = (t: string) => t.slice(0, 5);
+
+// ─── Showtime grid for one room ───────────────────────────────
+const RoomShowtimeGrid: React.FC<{ days: DayScheduleDTO[] }> = ({ days }) => {
+    const sorted = [...days].sort((a, b) => a.date.localeCompare(b.date));
+    if (sorted.length === 0)
+        return <Text type="secondary">Chưa có lịch chiếu</Text>;
+    dayjs.locale('en');
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {sorted.map((day) => (
+                <div key={day.date}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <CalendarOutlined style={{ color: 'rgba(255,255,255,0.45)' }} />
+                        <Text strong style={{ fontSize: 13 }}>
+                            {dayjs(day.date).format('dddd, DD/MM/YYYY')}
+                        </Text>
+                        <Badge
+                            count={day.startTimes.length}
+                            style={{ backgroundColor: '#1677ff' }}
+                        />
+                    </div>
+                    <Space wrap size={[6, 6]}>
+                        {[...day.startTimes]
+                            .sort()
+                            .map((t) => (
+                                <Tooltip key={t} title="Giờ chiếu">
+                                    <Tag
+                                        icon={<ClockCircleOutlined />}
+                                        color="blue"
+                                        style={{ fontSize: 13, padding: '3px 10px', borderRadius: 20 }}
+                                    >
+                                        {fmtTime(t)}
+                                    </Tag>
+                                </Tooltip>
+                            ))}
+                    </Space>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// ─── Main page ────────────────────────────────────────────────
 const MovieDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const [movie, setMovie] = useState<AdminMovieDTO | null>(null);
+    const [movie, setMovie] = useState<ComplexShowtimeRequestDTO | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchMovie = async () => {
-            setLoading(true);
-            try {
-                const res = await movieService.fetchMovieById(Number(id));
-                setMovie(res.data);
-            } catch (error) {
-                setMovie(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (id) fetchMovie();
+        if (!id) return;
+        setLoading(true);
+        movieService
+            .fetchMovieById(Number(id))
+            .then((res: any) => setMovie(res?.data ?? res))
+            .catch(() => setMovie(null))
+            .finally(() => setLoading(false));
     }, [id]);
 
     if (loading) {
@@ -75,41 +134,74 @@ const MovieDetailPage: React.FC = () => {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
                 <Empty description="Movie not found!">
-                    <Button type="primary" onClick={() => navigate(-1)}>
-                        Back
-                    </Button>
+                    <Button type="primary" onClick={() => navigate(-1)}>Back</Button>
                 </Empty>
             </div>
         );
     }
 
-    const posterSrc = movie.posterUrl ? `${baseURL}/api/v1/files/${movie.posterUrl}` : undefined;
+    const posterSrc = movie.posterUrl
+        ? `${baseURL}/api/v1/files/${movie.posterUrl}`
+        : undefined;
+
+    const totalShowtimes = (movie.rooms ?? []).reduce(
+        (acc, r) => acc + r.days.reduce((a, d) => a + d.startTimes.length, 0),
+        0
+    );
+
+    const tabItems = (movie.rooms ?? []).map((room) => ({
+        key: String(room.id),
+        label: (
+            <Space size={4}>
+                <HomeOutlined />
+                {room.name ?? `Phòng ${room.id}`}
+                <Badge
+                    count={room.days.reduce((a, d) => a + d.startTimes.length, 0)}
+                    style={{ backgroundColor: '#1677ff' }}
+                />
+            </Space>
+        ),
+        children: <RoomShowtimeGrid days={room.days} />,
+    }));
 
     return (
-        <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px' }}>
-            <Button
-                type="text"
-                icon={<ArrowLeftOutlined />}
-                onClick={() => navigate(-1)}
-                style={{ marginBottom: 16, paddingLeft: 0 }}
+        <div style={{ maxWidth: 1040, margin: '0 auto', padding: '24px 16px' }}>
+            {/* Top navigation */}
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 16,
+                    flexWrap: 'wrap',
+                    gap: 8,
+                }}
             >
-                Back
-            </Button>
-
-            <Card bordered styles={{ body: { padding: 0 } }}>
-                <div
-                    style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 0,
-                    }}
+                <Button
+                    type="text"
+                    icon={<ArrowLeftOutlined />}
+                    onClick={() => navigate(-1)}
+                    style={{ paddingLeft: 0 }}
                 >
+                    Back
+                </Button>
+                <Button
+                    icon={<EditOutlined />}
+                    onClick={() => navigate(`/admin/movies/${movie.id}/edit`)}
+                >
+                    Edit
+                </Button>
+            </div>
+
+            {/* Hero card */}
+            <Card styles={{ body: { padding: 0 } }} style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                     {/* Poster */}
                     <div
                         style={{
-                            flex: '0 0 280px',
-                            maxWidth: 280,
-                            minWidth: 220,
+                            flex: '0 0 220px',
+                            maxWidth: 220,
+                            minWidth: 160,
                             padding: 24,
                             display: 'flex',
                             justifyContent: 'center',
@@ -120,9 +212,9 @@ const MovieDetailPage: React.FC = () => {
                             style={{
                                 width: '100%',
                                 aspectRatio: '2 / 3',
-                                borderRadius: 8,
+                                borderRadius: 10,
                                 overflow: 'hidden',
-                                boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
                             }}
                         >
                             {posterSrc ? (
@@ -132,9 +224,6 @@ const MovieDetailPage: React.FC = () => {
                                     width="100%"
                                     height="100%"
                                     style={{ objectFit: 'cover', cursor: 'zoom-in' }}
-                                    preview={{
-                                        maskClassName: 'poster-preview-mask',
-                                    }}
                                 />
                             ) : (
                                 <div
@@ -145,7 +234,7 @@ const MovieDetailPage: React.FC = () => {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         background: 'rgba(255,255,255,0.06)',
-                                        color: 'rgba(255,255,255,0.45)',
+                                        color: 'rgba(255,255,255,0.3)',
                                     }}
                                 >
                                     No poster
@@ -154,16 +243,16 @@ const MovieDetailPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Details */}
-                    <div style={{ flex: '1 1 360px', padding: '24px 24px 24px 0', minWidth: 280 }}>
-                        <Space size={[8, 8]} wrap style={{ marginBottom: 8 }}>
+                    {/* Info */}
+                    <div style={{ flex: 1, padding: '24px 24px 24px 0', minWidth: 260 }}>
+                        <Space size={[6, 6]} wrap style={{ marginBottom: 10 }}>
                             {movie.status && (
                                 <Tag color={statusColor[movie.status] ?? 'default'} style={{ fontSize: 13 }}>
                                     {movie.status}
                                 </Tag>
                             )}
                             {movie.genre && (
-                                <Tag icon={<TagsOutlined />} color="purple" style={{ fontSize: 13 }}>
+                                <Tag color={genreColor[movie.genre] ?? 'default'} style={{ fontSize: 13 }}>
                                     {movie.genre}
                                 </Tag>
                             )}
@@ -175,33 +264,74 @@ const MovieDetailPage: React.FC = () => {
 
                         <Descriptions
                             column={1}
-                            size="middle"
+                            size="small"
                             labelStyle={{ width: 140, color: 'rgba(255,255,255,0.45)' }}
                             contentStyle={{ color: 'rgba(255,255,255,0.92)' }}
                         >
                             <Descriptions.Item label={<><ClockCircleOutlined /> Duration minutes</>}>
                                 {formatDuration(movie.durationMinutes)}
                             </Descriptions.Item>
-
                             <Descriptions.Item label={<><UserOutlined /> Director</>}>
                                 {movie.director || '-'}
                             </Descriptions.Item>
-
                             <Descriptions.Item label={<><CalendarOutlined /> Release date</>}>
-                                {movie.releaseDate ? dayjs(movie.releaseDate).format('DD/MM/YYYY HH:mm') : '-'}
+                                {movie.releaseDate
+                                    ? dayjs(movie.releaseDate).format('DD/MM/YYYY HH:mm')
+                                    : '-'}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={<><PlayCircleOutlined /> Total screenings </>}>
+                                <Text style={{ color: '#1677ff', fontWeight: 600 }}>
+                                    {totalShowtimes} screenings
+                                </Text>
+                                {'-'}at{'-'}
+                                <Text style={{ fontWeight: 600 }}>
+                                    {(movie.rooms ?? []).length}  rooms
+                                </Text>
                             </Descriptions.Item>
                         </Descriptions>
 
-                        <div style={{ marginTop: 16 }}>
-                            <Text strong style={{ display: 'block', marginBottom: 8, color: 'rgba(255,255,255,0.92)' }}>
-                                Description
-                            </Text>
-                            <Paragraph style={{ color: 'rgba(255,255,255,0.65)', whiteSpace: 'pre-line' }}>
-                                {movie.description || 'No description available'}
-                            </Paragraph>
-                        </div>
+                        {movie.description && (
+                            <>
+                                <Divider style={{ margin: '12px 0' }} />
+                                <Text
+                                    strong
+                                    style={{ display: 'block', marginBottom: 6, color: 'rgba(255,255,255,0.92)' }}
+                                >
+                                    Description
+                                </Text>
+                                <Paragraph
+                                    style={{
+                                        color: 'rgba(255,255,255,0.65)',
+                                        whiteSpace: 'pre-line',
+                                        marginBottom: 0,
+                                    }}
+                                >
+                                    {movie.description}
+                                </Paragraph>
+                            </>
+                        )}
                     </div>
                 </div>
+            </Card>
+
+            {/* Showtime section */}
+            <Card
+                title={
+                    <Space>
+                        <PlayCircleOutlined />
+                        <span>Schedule room</span>
+                        <Badge
+                            count={`${totalShowtimes} screenings`}
+                            style={{ backgroundColor: '#1677ff' }}
+                        />
+                    </Space>
+                }
+            >
+                {(movie.rooms ?? []).length === 0 ? (
+                    <Empty description="Not found screeng this movie" />
+                ) : (
+                    <Tabs items={tabItems} type="card" />
+                )}
             </Card>
         </div>
     );

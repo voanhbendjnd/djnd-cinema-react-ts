@@ -29,7 +29,7 @@ export interface AdminMovieDTO {
     director?: string;
     releaseDate?: string;
     posterUrl?: string;
-    status?: MovieStatusType | string;
+    status: MovieStatusType | string;
 }
 
 // --- Showtime scheduling ---
@@ -41,6 +41,7 @@ export interface DayScheduleDTO {
 
 export interface RoomScheduleDTO {
     id: number;          // room id
+    name?: string;
     days: DayScheduleDTO[];
 }
 

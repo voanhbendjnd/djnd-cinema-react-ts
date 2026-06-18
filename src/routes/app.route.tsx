@@ -5,7 +5,7 @@ import AuthLayout from '@/layouts/auth.layout.tsx';
 import AdminLayout from '@/layouts/admin.layout.tsx';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
-import UserManagement from '@/pages/admin/user/user.management.tsx';
+import EmployeeManagement from '@/pages/admin/user/employee.management.tsx';
 import MovieManagement from '@/pages/admin/movie/movie.management.tsx';
 import { useAuthStore } from '@/store/useAuthStore';
 import ActivateAccount from "@/pages/account/activated.account.tsx";
@@ -13,6 +13,7 @@ import ResetPasswordFinish from "@/pages/account/reset.passowrd.finish.tsx";
 import MovieDetailPage from "@/pages/admin/movie/movie.detail.tsx";
 import RoomManagement from "@/pages/admin/room/room.management.tsx";
 import RoomDetailPage from "@/pages/admin/room/room.detail.page.tsx";
+import CustomerManagement from "@/pages/admin/user/customer.management.tsx";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, role } = useAuthStore();
@@ -36,9 +37,10 @@ const AppRoutes: React.FC = () => {
       <Route element={<ProtectedRoute requiredRole="ROLE_ADMIN" />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
-          <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/employees" element={<EmployeeManagement />} />
           <Route path="/admin/movies" element={<MovieManagement />} />
             <Route path="/admin/rooms" element={<RoomManagement />} />
+            <Route path="/admin/customers" element={<CustomerManagement />} />
 
             <Route path="/admin/movies/:id" element={<MovieDetailPage />} />
             <Route path="/admin/rooms/:id" element={<RoomDetailPage />} />
