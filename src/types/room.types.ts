@@ -60,10 +60,20 @@ export interface SeatDTO {
     type: SeatTypeType | string;
 }
 
-export interface RoomDetailDTO {
-    id?: number;
-    name: string;
-    status: RoomStatusType | string;
-    type: RoomTypeType | string;
-    seats?: SeatDTO[];
+// export interface RoomDetailDTO {
+//     id?: number;
+//     name: string;
+//     status: RoomStatusType | string;
+//     type: RoomTypeType | string;
+//     seats?: SeatDTO[];
+// }
+
+// export interface SeatDTO {
+//     seatRow: string;
+//     seatNo: number;
+//     type?: SeatTypeType;
+// }
+
+export interface RoomDetailDTO extends RoomDTO {
+    seats: SeatDTO[];
 }

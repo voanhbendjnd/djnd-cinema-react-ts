@@ -17,7 +17,6 @@ import {
 } from 'antd';
 import {
     ArrowLeftOutlined,
-    EditOutlined,
     ClockCircleOutlined,
     CalendarOutlined,
     UserOutlined,
@@ -55,9 +54,9 @@ const formatDuration = (minutes?: number) => {
     if (!minutes) return '-';
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
-    if (h === 0) return `${m} phút`;
-    if (m === 0) return `${h} giờ`;
-    return `${h} giờ ${m} phút`;
+    if (h === 0) return `${m} minutes`;
+    if (m === 0) return `${h} hour`;
+    return `${h} hour ${m} minutes`;
 };
 
 // Format LocalTime from backend ("HH:mm:ss" or "HH:mm") to "HH:mm"
@@ -67,7 +66,7 @@ const fmtTime = (t: string) => t.slice(0, 5);
 const RoomShowtimeGrid: React.FC<{ days: DayScheduleDTO[] }> = ({ days }) => {
     const sorted = [...days].sort((a, b) => a.date.localeCompare(b.date));
     if (sorted.length === 0)
-        return <Text type="secondary">Chưa có lịch chiếu</Text>;
+        return <Text type="secondary">Not found schedule</Text>;
     dayjs.locale('en');
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -184,12 +183,6 @@ const MovieDetailPage: React.FC = () => {
                     style={{ paddingLeft: 0 }}
                 >
                     Back
-                </Button>
-                <Button
-                    icon={<EditOutlined />}
-                    onClick={() => navigate(`/admin/movies/${movie.id}/edit`)}
-                >
-                    Edit
                 </Button>
             </div>
 

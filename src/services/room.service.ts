@@ -4,7 +4,7 @@ import type { RoomDTO, RoomDetailDTO } from '../types/room.types';
 export const roomService = {
     fetchAllWithPagination: (q: string, page: number, size: number) => {
         return axiosClient.get<IBackendRes<IModelPaginate<RoomDTO>>>('/api/v1/admin/rooms', {
-            params: { q, page, size },
+            params: { q, page, size , sort:'lastModifiedDate,desc'},
         });
     },
 
@@ -16,5 +16,9 @@ export const roomService = {
     // Add a corresponding GET /api/v1/admin/rooms/{id} -> RoomDetailDTO endpoint on the backend.
     fetchRoomDetail: (id: number) => {
         return axiosClient.get<RoomDetailDTO>(`/api/v1/admin/rooms/${id}`);
+    },
+    // room.service.ts
+    updateRoom: (payload: RoomDetailDTO) => {
+        return axiosClient.put<RoomDetailDTO>('/api/v1/admin/rooms', payload);
     },
 };

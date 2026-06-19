@@ -8,6 +8,7 @@ import type { RoomDTO } from '@/types/room.types';
 import { ROOM_STATUS_LABELS, ROOM_TYPE_LABELS } from '@/types/room.types';
 import {roomService} from "@/services/room.service.ts";
 import RoomCreateForm from "@/pages/admin/room/component/room.create.form.tsx";
+import RoomUpdateForm from "@/pages/admin/room/component/room.update.modal.tsx";
 
 const statusColor: Record<string, string> = {
     ACTIVE: 'green',
@@ -19,6 +20,8 @@ const RoomManagement: React.FC = () => {
     const navigate = useNavigate();
     const actionRef = useRef<ActionType>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
+    const [selectedRoom, setSelectedRoom] = useState<RoomDTO | null>(null);
     const columns: ProColumns<RoomDTO>[] = [
         {
             title: 'ID',
@@ -76,6 +79,19 @@ const RoomManagement: React.FC = () => {
                 >
                     View detail
                 </Button>,
+                <Button
+                    key="edit"
+                    type="link"
+                    onClick={() => {
+                        setSelectedRoom(record);
+                        setIsUpdateModalOpen(true);
+                    }}
+                >
+                    Edit
+                </Button>,
+                <Button key="delete" type="link" danger>
+                    Delete
+                </Button>,
             ],
         },
     ];
@@ -129,6 +145,19 @@ const RoomManagement: React.FC = () => {
                 onClose={() => setIsCreateModalOpen(false)}
                 onSuccess={() => {
                     setIsCreateModalOpen(false);
+                    actionRef.current?.reload();
+                }}
+            />
+            <RoomUpdateForm
+                roomId={selectedRoom?.id}
+                open={isUpdateModalOpen}
+                onClose={() => {
+                    setIsUpdateModalOpen(false);
+                    setSelectedRoom(null);
+                }}
+                onSuccess={() => {
+                    setIsUpdateModalOpen(false);
+                    setSelectedRoom(null);
                     actionRef.current?.reload();
                 }}
             />
