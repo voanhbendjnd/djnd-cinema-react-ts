@@ -26,7 +26,7 @@ const Login: React.FC = () => {
 
         const role = useAuthStore.getState().role;
         if (role === 'ROLE_ADMIN') {
-          navigate('/admin/users');
+          navigate('/admin/employees');
         } else {
           navigate('/');
         }

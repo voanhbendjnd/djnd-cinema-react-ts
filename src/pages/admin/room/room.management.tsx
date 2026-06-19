@@ -1,7 +1,7 @@
 import React, {useRef, useState} from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Button, message, Tag } from 'antd';
+import {Button, message, notification, Popconfirm, Tag} from 'antd';
 import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { RoomDTO } from '@/types/room.types';
@@ -22,6 +22,8 @@ const RoomManagement: React.FC = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
     const [selectedRoom, setSelectedRoom] = useState<RoomDTO | null>(null);
+    const [api, contextHolder] = notification.useNotification();
+
     const columns: ProColumns<RoomDTO>[] = [
         {
             title: 'ID',
@@ -89,15 +91,37 @@ const RoomManagement: React.FC = () => {
                 >
                     Edit
                 </Button>,
-                <Button key="delete" type="link" danger>
-                    Delete
-                </Button>,
+                <Popconfirm
+                    key="delete"
+                    title="Are you sure to delete this room?"
+                    onConfirm={async () => {
+                        try {
+                            await roomService.deleteRoom(record.id);
+                            api.success({
+                                message:'Delete successfully',
+                                placement: 'topRight'
+                            })
+                            await actionRef.current?.reload();
+                        } catch (error: unknown) {
+                            api.error({
+                                message: 'Failed to delete',
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                //@ts-expect-error
+                                description: error.response?.data?.message || 'Failed to delete',
+                                placement: 'topRight'
+                            });
+                        }
+                    }}
+                >
+                    <a style={{ color: 'red' }}>Delete</a>
+                </Popconfirm>,
             ],
         },
     ];
 
     return (
         <>
+            {contextHolder}
             <ProTable<RoomDTO>
                 columns={columns}
                 actionRef={actionRef}

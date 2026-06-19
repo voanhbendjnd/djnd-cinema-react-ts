@@ -36,7 +36,7 @@ const AppRoutes: React.FC = () => {
       {/* Admin routes */}
       <Route element={<ProtectedRoute requiredRole="ROLE_ADMIN" />}>
         <Route element={<AdminLayout />}>
-          <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+          <Route path="/admin" element={<Navigate to="/admin/employees" replace />} />
           <Route path="/admin/employees" element={<EmployeeManagement />} />
           <Route path="/admin/movies" element={<MovieManagement />} />
             <Route path="/admin/rooms" element={<RoomManagement />} />
@@ -53,7 +53,7 @@ const AppRoutes: React.FC = () => {
         path="*" 
         element={
           isAuthenticated 
-            ? (role === 'ROLE_ADMIN' ? <Navigate to="/admin/users" /> : <div>Home Page For User</div>) 
+            ? (role === 'ROLE_ADMIN' ? <Navigate to="/admin/employees" /> : <div>Home Page For User</div>)
             : <Navigate to="/login" />
         } 
       />

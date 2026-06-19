@@ -21,4 +21,7 @@ export const roomService = {
     updateRoom: (payload: RoomDetailDTO) => {
         return axiosClient.put<RoomDetailDTO>('/api/v1/admin/rooms', payload);
     },
+    deleteRoom: async (id: number | undefined) => {
+        return axiosClient.delete(`/api/v1/admin/rooms/${id}`);
+    }
 };
