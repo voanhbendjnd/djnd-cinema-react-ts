@@ -12,7 +12,14 @@ export const MovieGenre = {
     ROMANCE: 'ROMANCE'
 } as const;
 export type MovieGenreType = keyof typeof MovieGenre;
-
+export interface RoomScheduleEditorProps {
+    room: RoomNameProjection;
+    schedule: RoomScheduleDTO;
+    onChange: (schedule: RoomScheduleDTO) => void;
+    onRemove: () => void;
+    duration: number;
+    releaseDate?: string; // ★ ADD: ISO datetime string from step 0, e.g. "2026-07-01T19:30:00"
+}
 export const MovieStatus = {
     SHOWING: 'SHOWING',
     UPCOMING: 'UPCOMING',

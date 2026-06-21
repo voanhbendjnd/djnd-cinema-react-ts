@@ -14,6 +14,9 @@ import MovieDetailPage from "@/pages/admin/movie/movie.detail.tsx";
 import RoomManagement from "@/pages/admin/room/room.management.tsx";
 import RoomDetailPage from "@/pages/admin/room/room.detail.page.tsx";
 import CustomerManagement from "@/pages/admin/user/customer.management.tsx";
+import RoleManagement from "@/pages/admin/role/role.management.tsx";
+import PermissionManagement from "@/pages/admin/permission/permission.management.tsx";
+import TicketLookup from '@/pages/admin/ticket-lookup';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, role } = useAuthStore();
@@ -41,6 +44,9 @@ const AppRoutes: React.FC = () => {
           <Route path="/admin/movies" element={<MovieManagement />} />
             <Route path="/admin/rooms" element={<RoomManagement />} />
             <Route path="/admin/customers" element={<CustomerManagement />} />
+            <Route path="/admin/roles" element={<RoleManagement />} />
+            <Route path="/admin/permissions" element={<PermissionManagement />} />
+            <Route path="/admin/ticket-lookup" element={<TicketLookup />} />
 
             <Route path="/admin/movies/:id" element={<MovieDetailPage />} />
             <Route path="/admin/rooms/:id" element={<RoomDetailPage />} />

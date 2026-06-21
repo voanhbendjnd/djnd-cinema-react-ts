@@ -15,7 +15,7 @@ export const userService = {
       searchParams.append('q', params.q);
     }
 
-    return axiosClient.get(`/api/v1/admin/users/employee?${searchParams.toString()}`);
+    return axiosClient.get(`/api/v1/admin/users/employee?${searchParams.toString()}&sort=lastModifiedDate,desc`);
   },
   getCustomers: async (params: { current?: number; pageSize?: number; q?: string }): Promise<IBackendRes<IModelPaginate<IAccount>>> => {
     const page = params.current ? params.current - 1 : 0; // Spring boot page is 0-indexed
@@ -30,7 +30,7 @@ export const userService = {
       searchParams.append('q', params.q);
     }
 
-    return axiosClient.get(`/api/v1/admin/users/customer?${searchParams.toString()}`);
+    return axiosClient.get(`/api/v1/admin/users/customer?${searchParams.toString()}&sort=lastModifiedDate,desc`);
   },
   createUser: async (data: any) => {
     return axiosClient.post('/api/v1/admin/users', data);
@@ -40,7 +40,14 @@ export const userService = {
   },
   deleteUser: async (login: string) => {
     return axiosClient.delete(`/api/v1/admin/users/${login}`);
-  }
+  },
+
+  toggleStatus: async (id: number, activated: boolean) => {
+    return axiosClient.patch('/api/v1/admin/users/activated', {
+      id,
+      activated,
+    });
+  },
 };
 
 export const adminUserService = {

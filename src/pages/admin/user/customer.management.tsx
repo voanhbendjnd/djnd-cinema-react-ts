@@ -1,6 +1,6 @@
 import React, {useRef} from 'react';
 import {type ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
-import {notification} from 'antd';
+import {notification, Switch} from 'antd';
 import { userService } from '@/services/user.service.ts';
 
 const CustomerManagement: React.FC = () => {
@@ -52,16 +52,34 @@ const CustomerManagement: React.FC = () => {
             title: 'Action',
             valueType: 'option',
             key: 'option',
-            render: (_text, record, _, action) => [
-                <a
-                    key="editable"
-                    onClick={() => {
-                        action?.startEditable?.(record.id);
+            render: (_, record) => [
+                <Switch
+                    key="status"
+                    checked={record.activated}
+                    checkedChildren="ON"
+                    unCheckedChildren="OFF"
+                    onChange={async (checked) => {
+                        try {
+                            await userService.toggleStatus(
+                                record.id,
+                                checked
+                            );
+
+                            api.success({
+                                message: 'Status updated',
+                                placement: 'topRight'
+                            });
+
+                            await actionRef.current?.reload();
+                        } catch (error) {
+                            api.error({
+                                message: 'Failed to update status',
+                                placement: 'topRight'
+                            });
+                        }
                     }}
-                >
-                    Edit Status
-                </a>,
-            ],
+                />
+            ]
         },
     ];
 

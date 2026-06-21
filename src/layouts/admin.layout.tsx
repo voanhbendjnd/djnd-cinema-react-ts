@@ -3,10 +3,10 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { ProLayout } from '@ant-design/pro-components';
 import { Dropdown } from 'antd';
 import {
-  UserOutlined,
-  LogoutOutlined,
-  VideoCameraOutlined,
-  MedicineBoxOutlined
+    UserOutlined,
+    LogoutOutlined,
+    VideoCameraOutlined,
+    MedicineBoxOutlined, KeyOutlined, SafetyCertificateOutlined, ScanOutlined
 } from '@ant-design/icons';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authService } from '@/services/auth.service';
@@ -58,6 +58,21 @@ const AdminLayout: React.FC = () => {
               name: 'Rooms Management',
               icon: <MedicineBoxOutlined />,
             },
+              {
+                  path: '/admin/roles',
+                  name: 'Roles Management',
+                  icon: <KeyOutlined />,
+              },
+              {
+                  path: '/admin/permissions',
+                  name: 'Permission Management',
+                  icon: <SafetyCertificateOutlined />,
+              },
+              {
+                  path: '/admin/ticket-lookup',
+                  name: 'Ticket Verification',
+                  icon: <ScanOutlined />,
+              },
           ],
         }}
         location={{
