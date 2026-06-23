@@ -11,6 +11,19 @@ export interface AdminUserDTO {
     activated?: boolean;
     createdDate?: string;
 }
+export interface UserDTO {
+    id: number;
+    login: string;
+    name: string;
+    email: string;
+    phone?: string;
+    gender?: string;
+    createdBy?: string;
+    createdDate?: string;
+    lastModifiedBy?: string;
+    lastModifiedDate?: string;
+}
+
 
 export interface RoleOption {
     id: number;

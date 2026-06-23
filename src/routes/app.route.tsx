@@ -41,25 +41,36 @@ const AppRoutes: React.FC = () => {
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<Navigate to="/admin/employees" replace />} />
           <Route path="/admin/employees" element={<EmployeeManagement />} />
-          <Route path="/admin/movies" element={<MovieManagement />} />
-            <Route path="/admin/rooms" element={<RoomManagement />} />
+
             <Route path="/admin/customers" element={<CustomerManagement />} />
             <Route path="/admin/roles" element={<RoleManagement />} />
             <Route path="/admin/permissions" element={<PermissionManagement />} />
-            <Route path="/admin/ticket-lookup" element={<TicketLookup />} />
-
-            <Route path="/admin/movies/:id" element={<MovieDetailPage />} />
-            <Route path="/admin/rooms/:id" element={<RoomDetailPage />} />
+            <Route path="/manager/ticket-lookup" element={<TicketLookup />} />
+            <Route path="/manager/movies" element={<MovieManagement />} />
+            <Route path="/manager/rooms" element={<RoomManagement />} />
+            <Route path="/manager/movies/:id" element={<MovieDetailPage />} />
+            <Route path="/manager/rooms/:id" element={<RoomDetailPage />} />
 
         </Route>
       </Route>
+        <Route element={<ProtectedRoute requiredRole="ROLE_MANAGER" />}>
+            <Route element={<AdminLayout />}>
+                <Route path="/manager" element={<Navigate to="/manager/movies" replace />} />
+                <Route path="/manager/ticket-lookup" element={<TicketLookup />} />
+                <Route path="/manager/movies" element={<MovieManagement />} />
+                <Route path="/manager/rooms" element={<RoomManagement />} />
+                <Route path="/manager/movies/:id" element={<MovieDetailPage />} />
+                <Route path="/manager/rooms/:id" element={<RoomDetailPage />} />
+
+            </Route>
+        </Route>
 
       {/* Redirect all unknown to login or home */}
       <Route 
         path="*" 
         element={
           isAuthenticated 
-            ? (role === 'ROLE_ADMIN' ? <Navigate to="/admin/employees" /> : <div>Home Page For User</div>)
+            ? (role === 'ROLE_ADMIN' ? <Navigate to="/admin/employees" />  : role === 'ROLE_MANAGER' ?  <Navigate to="/manager/movies" /> : <div>Home Page For User</div>)
             : <Navigate to="/login" />
         } 
       />

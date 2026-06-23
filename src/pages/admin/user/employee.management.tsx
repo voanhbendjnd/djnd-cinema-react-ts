@@ -4,11 +4,18 @@ import {Button, Modal, notification, Popconfirm} from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { userService } from '@/services/user.service.ts';
 import AdminCreateUser from "./admin.create.user.tsx";
+import UserDetailModal from "@/pages/admin/user/component/user.detail.modal.tsx";
 
 const EmployeeManagement: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const [isOpenCreateUserAdmin, setOpenCreateUserAdmin] = useState<boolean>(false);
   const [api, contextHolder] = notification.useNotification();
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const handleViewDetail = (id: number) => {
+    setSelectedUserId(id);
+    setDetailOpen(true);
+  };
   const columns: ProColumns<IUser>[] = [
     {
       title: 'ID',
@@ -57,6 +64,15 @@ const EmployeeManagement: React.FC = () => {
       key: 'option',
       render: (_text, record, _, action) => [
         <a
+            style={{color:'blueviolet', fontSize:'medium', fontWeight:'bold'}}
+            key="viewtable"
+            onClick={() => handleViewDetail(record.id)}
+
+        >
+          View
+        </a>,
+        <a
+            style={{color:'yellow', fontSize:'medium', fontWeight:'bold'}}
           key="editable"
           onClick={() => {
             action?.startEditable?.(record.id);
@@ -86,7 +102,7 @@ const EmployeeManagement: React.FC = () => {
             }
           }}
         >
-          <a style={{ color: 'red' }}>Delete</a>
+          <a style={{ color: 'red',fontSize:'medium', fontWeight:'bold' }}>Delete</a>
         </Popconfirm>,
       ],
     },
@@ -189,6 +205,14 @@ const EmployeeManagement: React.FC = () => {
               }}
           />
         </Modal>
+        <UserDetailModal
+            open={detailOpen}
+            userId={selectedUserId}
+            onClose={() => {
+              setDetailOpen(false);
+              setSelectedUserId(null);
+            }}
+        />
       </>
 
   );

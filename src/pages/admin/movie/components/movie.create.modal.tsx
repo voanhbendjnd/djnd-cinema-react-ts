@@ -136,6 +136,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
   const [mode, setMode] = useState<TimePickMode>('preset');
   const [occupiedTimesMap, setOccupiedTimesMap] = useState<Record<string, string[]>>({});
   const [api, contextHolder] = notification.useNotification();
+  dayjs.locale('en');
 
   const releaseDateOnly = getReleaseDateOnly(releaseDate);
   const releaseTimeMinutes = getReleaseTimeMinutes(releaseDate);
@@ -149,7 +150,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
         const dateStr = day.date;
         if (!newMap[dateStr]) {
           try {
-            const res = await showtimeService.getAllTimeAtDateByRoom(room.id, dateStr);
+            const res = await showtimeService.getAllTimeAtDateByRoom(room.id, dateStr, 0);
             const times = (res.data || []).map((dt: string) => dayjs(dt).format('HH:mm'));
             newMap[dateStr] = times;
             updated = true;
@@ -219,6 +220,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
           time: slot + ':00',
           roomName: room.name,
           roomId: room.id,
+          movieId: 0
         });
         const day = schedule.days.find((d) => d.date === dateStr)!;
         updateTimes(dateStr, [...day.startTimes, slot].sort());
@@ -259,6 +261,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
         time: timeStr + ':00',
         roomName: room.name,
         roomId: room.id,
+        movieId: 0,
       });
       updateTimes(dateStr, [...day.startTimes, timeStr].sort());
     } catch (error: any) {
@@ -921,7 +924,9 @@ const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSu
                             : ''
                       }
                   >
-                    <Button type="primary" disabled={!step2Valid()} onClick={() => setCurrentStep(2)}>
+                    <Button type="primary"
+                            // disabled={!step2Valid()}
+                            onClick={() => setCurrentStep(2)}>
                       View summary →
                     </Button>
                   </Tooltip>

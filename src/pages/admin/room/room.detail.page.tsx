@@ -10,7 +10,7 @@ import {
     Space,
     Divider,
 } from 'antd';
-import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined} from '@ant-design/icons';
 import {
     ROOM_STATUS_LABELS,
     ROOM_TYPE_LABELS, type RoomDetailDTO,
@@ -137,12 +137,12 @@ const RoomDetailPage: React.FC = () => {
                     </Text>
                 </div>
 
-                <Button
-                    icon={<EditOutlined />}
-                    onClick={() => navigate(`/admin/rooms/${room.id}/edit`)}
-                >
-                    Edit seating chart
-                </Button>
+                {/*<Button*/}
+                {/*    icon={<EditOutlined />}*/}
+                {/*    onClick={() => navigate(`/admin/rooms/${room.id}/edit`)}*/}
+                {/*>*/}
+                {/*    Edit seating chart*/}
+                {/*</Button>*/}
             </div>
 
             <Card>

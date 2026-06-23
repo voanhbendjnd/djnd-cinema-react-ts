@@ -131,6 +131,7 @@ interface RoomScheduleEditorProps {
     onRemove: () => void;
     duration: number;
     releaseDate?: string; // ISO datetime string, e.g. "2026-07-01T19:30:00"
+    movieId: number | undefined;
 }
 
 const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
@@ -140,6 +141,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
                                                                    onRemove,
                                                                    duration,
                                                                    releaseDate,
+    movieId
                                                                }) => {
     const [mode, setMode] = useState<TimePickMode>('preset');
     const [occupiedTimesMap, setOccupiedTimesMap] = useState<Record<string, string[]>>({});
@@ -159,7 +161,9 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
                 const dateStr = day.date;
                 if (!newMap[dateStr]) {
                     try {
-                        const res = await showtimeService.getAllTimeAtDateByRoom(room.id, dateStr);
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-expect-error
+                        const res = await showtimeService.getAllTimeAtDateByRoom(room.id, dateStr, movieId);
                         const times = (res.data || []).map((dt: string) => dayjs(dt).format('HH:mm'));
                         newMap[dateStr] = times;
                         updated = true;
@@ -226,6 +230,9 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
                     time: slot + ':00',
                     roomName: room.name,
                     roomId: room.id,
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    //@ts-expect-error
+                    movieId: movieId,
                 });
                 const day = schedule.days.find((d) => d.date === dateStr)!;
                 updateTimes(dateStr, [...day.startTimes.map(fmtTime), slot].sort());
@@ -267,6 +274,9 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
                 time: t + ':00',
                 roomName: room.name,
                 roomId: room.id,
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                //@ts-expect-error
+                movieId: movieId,
             });
             updateTimes(dateStr, [...day.startTimes.map(fmtTime), t].sort());
         } catch (error: any) {
@@ -774,7 +784,7 @@ const MovieUpdateModal: React.FC<MovieUpdateModalProps> = ({ open, movie, onClos
                     placeholder="Input title movie"
                     rules={[{ required: true, message: 'Title is required' }]}
                 />
-                <ProFormTextArea name="description" label="Mô tả" placeholder="Description" fieldProps={{ rows: 3 }} />
+                <ProFormTextArea name="description" label="Description" placeholder="Description" fieldProps={{ rows: 3 }} />
                 <Tooltip
                     title={
                         isLocked
@@ -955,6 +965,7 @@ const MovieUpdateModal: React.FC<MovieUpdateModalProps> = ({ open, movie, onClos
                                 onRemove={() => toggleRoom(room, false)}
                                 duration={movieFields.durationMinutes ?? currentMovie?.durationMinutes ?? 0}
                                 releaseDate={effectiveReleaseDate}
+                                movieId={currentMovie?.id}
                             />
                         );
                     })

@@ -84,7 +84,7 @@ const MovieManagement: React.FC = () => {
                   key="view"
                   type="link"
                   icon={<EyeOutlined />}
-                  onClick={() => navigate(`/admin/movies/${record.id}`)}
+                  onClick={() => navigate(`/manager/movies/${record.id}`)}
               >
                   View
               </Button>,

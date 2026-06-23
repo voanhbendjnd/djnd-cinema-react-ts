@@ -6,6 +6,7 @@ export interface MovieRoomTimeDTORequest {
   time: string;
   roomName: string;
   roomId: number;
+  movieId: number;
 }
 
 export const showtimeService = {
@@ -14,8 +15,8 @@ export const showtimeService = {
     return response as unknown as IBackendRes<void>;
   },
 
-  getAllTimeAtDateByRoom: async (roomId: number, date: string): Promise<IBackendRes<string[]>> => {
-    const response = await axiosClient.post('/api/v1/admin/showtimes', { roomId, date });
+  getAllTimeAtDateByRoom: async (roomId: number, date: string, movieId:number): Promise<IBackendRes<string[]>> => {
+    const response = await axiosClient.post('/api/v1/admin/showtimes', { roomId, date, movieId });
     return response as unknown as IBackendRes<string[]>;
   }
 };

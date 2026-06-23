@@ -1,11 +1,20 @@
-import React, {useRef} from 'react';
+import React, {useRef, useState} from 'react';
 import {type ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
-import {notification, Switch} from 'antd';
+import {notification, Popconfirm, Space} from 'antd';
 import { userService } from '@/services/user.service.ts';
+import UserDetailModal from "@/pages/admin/user/component/user.detail.modal.tsx";
+// import {EyeOutlined} from "@ant-design/icons";
 
 const CustomerManagement: React.FC = () => {
     const actionRef = useRef<ActionType | null>(null);
     const [api, contextHolder] = notification.useNotification();
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+
+    const handleViewDetail = (id: number) => {
+        setSelectedUserId(id);
+        setDetailOpen(true);
+    };
     const columns: ProColumns<IUser>[] = [
         {
             title: 'ID',
@@ -53,33 +62,66 @@ const CustomerManagement: React.FC = () => {
             valueType: 'option',
             key: 'option',
             render: (_, record) => [
-                <Switch
-                    key="status"
-                    checked={record.activated}
-                    checkedChildren="ON"
-                    unCheckedChildren="OFF"
-                    onChange={async (checked) => {
-                        try {
-                            await userService.toggleStatus(
-                                record.id,
-                                checked
-                            );
+                <Space key="actions">
+                    {/*<Button*/}
+                    {/*    size="small"*/}
+                    {/*    icon={<EyeOutlined />}*/}
+                    {/*    onClick={() => handleViewDetail(record.id)}*/}
+                    {/*>*/}
+                    {/*    View*/}
+                    {/*</Button>*/}
+                    <a
+                        style={{color:'blueviolet', fontSize:'medium', fontWeight:'bold'}}
+                        key="viewtable"
+                        onClick={() => handleViewDetail(record.id)}
 
-                            api.success({
-                                message: 'Status updated',
-                                placement: 'topRight'
-                            });
+                    >
+                        View
+                    </a>
+                    {/*{*/}
+                    {/*    record.activated ? (*/}
+                    {/*        <Tag color="success">Active</Tag>*/}
+                    {/*    ) : (*/}
+                    {/*        <Tag color="error">Inactive</Tag>*/}
+                    {/*    )*/}
+                    {/*}*/}
 
-                            await actionRef.current?.reload();
-                        } catch (error) {
-                            api.error({
-                                message: 'Failed to update status',
-                                placement: 'topRight'
-                            });
-                        }
-                    }}
-                />
-            ]
+                    <Popconfirm
+                        title={`${
+                            record.activated ? 'Deactivate' : 'Activate'
+                        } this user?`}
+                        onConfirm={async () => {
+                            try {
+                                await userService.toggleStatus(
+                                    record.id,
+                                    !record.activated
+                                );
+
+                                api.success({
+                                    message: 'Status updated',
+                                    placement: 'topRight',
+                                });
+
+                                actionRef.current?.reload();
+                            } catch {
+                                api.error({
+                                    message: 'Failed to update status',
+                                    placement: 'topRight',
+                                });
+                            }
+                        }}
+                    >
+                        <a
+                          style={record.activated ? {color: 'yellow'} : {color:'green'}}
+                            // size="small"
+                            // danger={record.activated}
+                            type={record.activated ? 'default' : 'primary'}
+                        >
+                            {record.activated ? 'Deactivate' : 'Activate'}
+                        </a>
+                    </Popconfirm>
+                </Space>,
+            ],
         },
     ];
 
@@ -159,6 +201,14 @@ const CustomerManagement: React.FC = () => {
                 }
 
 
+            />
+            <UserDetailModal
+                open={detailOpen}
+                userId={selectedUserId}
+                onClose={() => {
+                    setDetailOpen(false);
+                    setSelectedUserId(null);
+                }}
             />
         </>
 

@@ -49,12 +49,12 @@ const AdminLayout: React.FC = () => {
               icon: <UserOutlined />,
             },
             {
-              path: '/admin/movies',
+              path: '/manager/movies',
               name: 'Movies Management',
               icon: <VideoCameraOutlined />,
             },
             {
-              path: '/admin/rooms',
+              path: '/manager/rooms',
               name: 'Rooms Management',
               icon: <MedicineBoxOutlined />,
             },
@@ -69,7 +69,7 @@ const AdminLayout: React.FC = () => {
                   icon: <SafetyCertificateOutlined />,
               },
               {
-                  path: '/admin/ticket-lookup',
+                  path: '/manager/ticket-lookup',
                   name: 'Ticket Verification',
                   icon: <ScanOutlined />,
               },

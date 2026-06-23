@@ -77,7 +77,7 @@ const RoomManagement: React.FC = () => {
                     key="view"
                     type="link"
                     icon={<EyeOutlined />}
-                    onClick={() => navigate(`/admin/rooms/${record.id}`)}
+                    onClick={() => navigate(`/manager/rooms/${record.id}`)}
                 >
                     View detail
                 </Button>,

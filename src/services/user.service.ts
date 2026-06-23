@@ -1,11 +1,11 @@
 import axiosClient from '@/services/axiosClient';
-import type {AdminUserDTO} from "@/types/user.types.ts";
+import type {AdminUserDTO, UserDTO} from "@/types/user.types.ts";
 
 export const userService = {
   getEmployees: async (params: { current?: number; pageSize?: number; q?: string }): Promise<IBackendRes<IModelPaginate<IAccount>>> => {
     const page = params.current ? params.current - 1 : 0; // Spring boot page is 0-indexed
     const size = params.pageSize || 10;
-    
+
     // Ant Design ProTable pass params.current and params.pageSize
     const searchParams = new URLSearchParams();
     searchParams.append('page', page.toString());
@@ -16,6 +16,9 @@ export const userService = {
     }
 
     return axiosClient.get(`/api/v1/admin/users/employee?${searchParams.toString()}&sort=lastModifiedDate,desc`);
+  },
+  getUserById: (id: number) => {
+    return axiosClient.get<UserDTO>(`/api/v1/admin/users/${id}`);
   },
   getCustomers: async (params: { current?: number; pageSize?: number; q?: string }): Promise<IBackendRes<IModelPaginate<IAccount>>> => {
     const page = params.current ? params.current - 1 : 0; // Spring boot page is 0-indexed

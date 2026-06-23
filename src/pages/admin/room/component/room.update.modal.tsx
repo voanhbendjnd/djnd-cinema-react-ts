@@ -521,7 +521,7 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                                                                 <div
                                                                     key={i}
                                                                     onClick={() => handleSeatClick(rowLetter, seatNo)}
-                                                                    title={`${rowLetter}${seatNo} - ${SEAT_TYPE_LABELS[cellType]}${isNewSeat ? ' (ghế mới)' : ''}`}
+                                                                    title={`${rowLetter}${seatNo} - ${SEAT_TYPE_LABELS[cellType]}${isNewSeat ? ' (new seat)' : ''}`}
                                                                     style={{
                                                                         width: 24,
                                                                         height: 24,
@@ -563,17 +563,17 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                                                         <Text>{label}</Text>
                                                     </Space>
                                                 ))}
-                                                <Space size={6}>
-                                                    <div
-                                                        style={{
-                                                            width: 16,
-                                                            height: 16,
-                                                            borderRadius: 4,
-                                                            border: '1px dashed #1677ff',
-                                                        }}
-                                                    />
-                                                    <Text>New seat</Text>
-                                                </Space>
+                                                {/*<Space size={6}>*/}
+                                                {/*    <div*/}
+                                                {/*        style={{*/}
+                                                {/*            width: 16,*/}
+                                                {/*            height: 16,*/}
+                                                {/*            borderRadius: 4,*/}
+                                                {/*            border: '1px dashed #1677ff',*/}
+                                                {/*        }}*/}
+                                                {/*    />*/}
+                                                {/*    <Text>New seat</Text>*/}
+                                                {/*</Space>*/}
                                             </Space>
                                         </div>
                                     )}

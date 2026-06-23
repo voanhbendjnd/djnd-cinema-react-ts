@@ -121,7 +121,7 @@ const ResetPasswordFinish: React.FC = () => {
                 >
                     <Form.Item
                         name="newPassword"
-                        label="Mật khẩu mới"
+                        label="New password"
                         rules={[
                             { required: true, message: 'Please input new password' },
                             {
