@@ -17,6 +17,8 @@ import CustomerManagement from "@/pages/admin/user/customer.management.tsx";
 import RoleManagement from "@/pages/admin/role/role.management.tsx";
 import PermissionManagement from "@/pages/admin/permission/permission.management.tsx";
 import TicketLookup from '@/pages/admin/ticket-lookup';
+import HomePage from "@/pages/user/home/page.tsx";
+import HomeLayout from "@/pages/user/home/layout.tsx";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, role } = useAuthStore();
@@ -64,16 +66,23 @@ const AppRoutes: React.FC = () => {
 
             </Route>
         </Route>
+        <Route element={<HomeLayout />}>
+            <Route path="/" element={<HomePage />} />
+        </Route>
 
       {/* Redirect all unknown to login or home */}
-      <Route 
-        path="*" 
-        element={
-          isAuthenticated 
-            ? (role === 'ROLE_ADMIN' ? <Navigate to="/admin/employees" />  : role === 'ROLE_MANAGER' ?  <Navigate to="/manager/movies" /> : <div>Home Page For User</div>)
-            : <Navigate to="/login" />
-        } 
-      />
+        <Route
+            path="/"
+            element={
+                !isAuthenticated
+                    ? <HomePage />
+                    : role === 'ROLE_ADMIN'
+                        ? <Navigate to="/admin/employees" replace />
+                        : role === 'ROLE_MANAGER'
+                            ? <Navigate to="/manager/movies" replace />
+                            : <HomePage />
+            }
+        />
     </Routes>
   );
 };

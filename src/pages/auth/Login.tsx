@@ -22,16 +22,16 @@ const Login: React.FC = () => {
       const user = res?.data?.user;
       if (accessToken && user) {
         setAuth(accessToken, user);
+
         message.success("Login success");
 
-        const role = useAuthStore.getState().role;
-        if (role === 'ROLE_ADMIN') {
+        if (user.role === 'ROLE_ADMIN') {
           navigate('/admin/employees');
+        } else if (user.role === 'ROLE_MANAGER') {
+          navigate('/manager/movies');
         } else {
           navigate('/');
         }
-      } else {
-         message.error('Invalid response format from server.');
       }
     } catch (error: any) {
 

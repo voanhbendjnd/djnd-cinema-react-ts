@@ -15,15 +15,11 @@ import {
     Button,
     Card,
     Tag,
-    DatePicker,
-    TimePicker,
     Space,
     Typography,
     Divider,
     Tooltip,
     Empty,
-    Badge,
-    Radio,
     Alert,
     Form,
     Spin,
@@ -31,14 +27,11 @@ import {
 import {
     PlusOutlined,
     LoadingOutlined,
-    DeleteOutlined,
     ClockCircleOutlined,
-    ThunderboltOutlined,
-    EditOutlined,
 } from '@ant-design/icons';
 import type { UploadChangeParam } from 'antd/es/upload';
 import type { UploadFile, UploadProps } from 'antd/es/upload/interface';
-import { MovieGenre, MovieStatus, HOT_TIME_SLOTS, type MovieStatusType } from '@/types/movie.types';
+import { MovieGenre, MovieStatus, type MovieStatusType } from '@/types/movie.types';
 import type {
     AdminMovieDTO,
     ComplexShowtimeRequestDTO,
@@ -47,11 +40,11 @@ import type {
 } from '@/types/movie.types';
 import 'dayjs/locale/en';
 import { movieService } from '@/services/movie.service';
-import { showtimeService } from '@/services/showtime.service';
 import { baseURL } from '@/services/axiosClient';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import ImgCrop from 'antd-img-crop';
 import '@/styles/movie.admin.css';
+import RoomScheduleEditor from "@/pages/admin/showtime/room.schedule.editor.tsx";
 
 const { Text, Title } = Typography;
 
@@ -66,443 +59,6 @@ const STEPS = ['Movie information', 'Room & Schedule', 'Confirm'];
 
 // ── Format LocalTime "HH:mm:ss" → "HH:mm" ──
 const fmtTime = (t: string) => t.slice(0, 5);
-
-// ─────────────────────────────────────────────────────────────
-// Time / release-date helpers
-// ─────────────────────────────────────────────────────────────
-const timeToMinutes = (timeStr: string): number => {
-    const [h, m] = timeStr.split(':').map(Number);
-    return h * 60 + m;
-};
-
-// Extract "YYYY-MM-DD" from a release ISO datetime string
-const getReleaseDateOnly = (releaseDate?: string): string | null => {
-    if (!releaseDate) return null;
-    return dayjs(releaseDate).format('YYYY-MM-DD');
-};
-
-// Extract release time as minutes-since-midnight
-const getReleaseTimeMinutes = (releaseDate?: string): number | null => {
-    if (!releaseDate) return null;
-    const d = dayjs(releaseDate);
-    return d.hour() * 60 + d.minute();
-};
-
-// True only when the day being scheduled IS the release date AND the slot
-// time is earlier than the release time on that same day
-const isBeforeReleaseTime = (
-    dateStr: string,
-    slot: string,
-    releaseDateOnly: string | null,
-    releaseTimeMinutes: number | null,
-): boolean => {
-    if (!releaseDateOnly || releaseTimeMinutes === null) return false;
-    if (dateStr !== releaseDateOnly) return false;
-    return timeToMinutes(slot) < releaseTimeMinutes;
-};
-
-const isOverlappingWithSelected = (slot: string, selectedTimes: string[], duration: number): boolean => {
-    const slotStart = timeToMinutes(slot);
-    const slotEnd = slotStart + duration + 15;
-
-    for (const t of selectedTimes) {
-        const tFormatted = t.slice(0, 5);
-        if (slot === tFormatted) continue;
-
-        const tStart = timeToMinutes(tFormatted);
-        const tEnd = tStart + duration + 15;
-
-        if (tStart < slotEnd && slotStart < tEnd) {
-            return true;
-        }
-    }
-    return false;
-};
-
-// ─────────────────────────────────────────────────────────────
-// RoomScheduleEditor
-// ─────────────────────────────────────────────────────────────
-type TimePickMode = 'manual' | 'preset';
-
-interface RoomScheduleEditorProps {
-    room: RoomNameProjection;
-    schedule: RoomScheduleDTO;
-    onChange: (s: RoomScheduleDTO) => void;
-    onRemove: () => void;
-    duration: number;
-    releaseDate?: string; // ISO datetime string, e.g. "2026-07-01T19:30:00"
-    movieId: number | undefined;
-}
-
-const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
-                                                                   room,
-                                                                   schedule,
-                                                                   onChange,
-                                                                   onRemove,
-                                                                   duration,
-                                                                   releaseDate,
-    movieId
-                                                               }) => {
-    const [mode, setMode] = useState<TimePickMode>('preset');
-    const [occupiedTimesMap, setOccupiedTimesMap] = useState<Record<string, string[]>>({});
-    const [api, contextHolder] = notification.useNotification();
-
-    const releaseDateOnly = getReleaseDateOnly(releaseDate);
-    const releaseTimeMinutes = getReleaseTimeMinutes(releaseDate);
-
-    dayjs.locale('en');
-
-    useEffect(() => {
-        const fetchOccupiedTimes = async () => {
-            const newMap = { ...occupiedTimesMap };
-            let updated = false;
-
-            for (const day of schedule.days) {
-                const dateStr = day.date;
-                if (!newMap[dateStr]) {
-                    try {
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-expect-error
-                        const res = await showtimeService.getAllTimeAtDateByRoom(room.id, dateStr, movieId);
-                        const times = (res.data || []).map((dt: string) => dayjs(dt).format('HH:mm'));
-                        newMap[dateStr] = times;
-                        updated = true;
-                    } catch (error) {
-                        console.error('Failed to fetch occupied times:', error);
-                    }
-                }
-            }
-
-            if (updated) {
-                setOccupiedTimesMap(newMap);
-            }
-        };
-
-        if (schedule.days.length > 0) {
-            fetchOccupiedTimes();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [schedule.days, room.id]);
-
-    const addDay = (date: Dayjs | null) => {
-        if (!date) return;
-        const dateStr = date.format('YYYY-MM-DD');
-
-        // Block any date strictly before the movie's release date
-        if (releaseDateOnly && dateStr < releaseDateOnly) {
-            message.warning(
-                `Cannot schedule before release date (${dayjs(releaseDateOnly).format('DD/MM/YYYY')})!`
-            );
-            return;
-        }
-
-        if (schedule.days.find((d) => d.date === dateStr)) {
-            message.warning('This date already added!');
-            return;
-        }
-        onChange({
-            ...schedule,
-            days: [...schedule.days, { date: dateStr, startTimes: [] }],
-        });
-    };
-
-    const removeDay = (dateStr: string) =>
-        onChange({ ...schedule, days: schedule.days.filter((d) => d.date !== dateStr) });
-
-    const updateTimes = (dateStr: string, times: string[]) =>
-        onChange({
-            ...schedule,
-            days: schedule.days.map((d) => (d.date === dateStr ? { ...d, startTimes: [...times].sort() } : d)),
-        });
-
-    const handlePresetClick = async (dateStr: string, slot: string, checked: boolean) => {
-        if (checked) {
-            if (isBeforeReleaseTime(dateStr, slot, releaseDateOnly, releaseTimeMinutes)) {
-                message.warning(
-                    `Showtime cannot be before release time (${dayjs(releaseDate).format('HH:mm')})!`
-                );
-                return;
-            }
-            try {
-                await showtimeService.checkConflict({
-                    duration,
-                    date: dateStr,
-                    time: slot + ':00',
-                    roomName: room.name,
-                    roomId: room.id,
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    //@ts-expect-error
-                    movieId: movieId,
-                });
-                const day = schedule.days.find((d) => d.date === dateStr)!;
-                updateTimes(dateStr, [...day.startTimes.map(fmtTime), slot].sort());
-            } catch (error: any) {
-                const errMsg = error.response?.data?.message || 'Time conflict detected!';
-                api.error({ message: `Showtime conflict`, placement: 'topRight', description: errMsg });
-            }
-        } else {
-            const day = schedule.days.find((d) => d.date === dateStr)!;
-            updateTimes(dateStr, day.startTimes.map(fmtTime).filter((t) => t !== slot));
-        }
-    };
-
-    const addManual = async (dateStr: string, time: Dayjs | null) => {
-        if (!time) return;
-        const t = time.format('HH:mm');
-        const day = schedule.days.find((d) => d.date === dateStr)!;
-
-        if (day.startTimes.map(fmtTime).includes(t)) {
-            message.warning('This time already exists!');
-            return;
-        }
-
-        if (isBeforeReleaseTime(dateStr, t, releaseDateOnly, releaseTimeMinutes)) {
-            message.error(`Showtime cannot be before release time (${dayjs(releaseDate).format('HH:mm')})!`);
-            return;
-        }
-
-        const occupied = occupiedTimesMap[dateStr] || [];
-        if (occupied.includes(t)) {
-            message.error('This time is already occupied in this room!');
-            return;
-        }
-
-        try {
-            await showtimeService.checkConflict({
-                duration,
-                date: dateStr,
-                time: t + ':00',
-                roomName: room.name,
-                roomId: room.id,
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                //@ts-expect-error
-                movieId: movieId,
-            });
-            updateTimes(dateStr, [...day.startTimes.map(fmtTime), t].sort());
-        } catch (error: any) {
-            const errMsg = error.response?.data?.message || 'Time conflict detected!';
-            message.error(errMsg);
-        }
-    };
-
-    const removeManual = (dateStr: string, t: string) => {
-        const day = schedule.days.find((d) => d.date === dateStr)!;
-        updateTimes(dateStr, day.startTimes.map(fmtTime).filter((x) => x !== t));
-    };
-
-    return (
-        <>
-            {contextHolder}
-            <Card
-                size="small"
-                title={
-                    <Space>
-                        <Text strong>{room.name}</Text>
-                        <Badge count={schedule.days.length} style={{ backgroundColor: '#1677ff' }} />
-                    </Space>
-                }
-                extra={
-                    <Button size="small" danger icon={<DeleteOutlined />} onClick={onRemove}>
-                        Deselect
-                    </Button>
-                }
-                style={{ marginBottom: 12 }}
-            >
-                <Radio.Group
-                    value={mode}
-                    onChange={(e) => setMode(e.target.value)}
-                    size="small"
-                    style={{ marginBottom: 12 }}
-                >
-                    <Radio.Button value="preset">
-                        <ThunderboltOutlined /> Hot time
-                    </Radio.Button>
-                    <Radio.Button value="manual">
-                        <EditOutlined /> Input
-                    </Radio.Button>
-                </Radio.Group>
-
-                <div style={{ marginBottom: 12 }}>
-                    <DatePicker
-                        size="small"
-                        placeholder="Add date time"
-                        disabledDate={(d) =>
-                            !!d &&
-                            (d < dayjs().startOf('day') ||
-                                (releaseDateOnly ? d < dayjs(releaseDateOnly).startOf('day') : false))
-                        }
-                        onChange={addDay}
-                        value={null}
-                        style={{ width: 180 }}
-                    />
-                </div>
-
-                {schedule.days.length === 0 && (
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                        Not found schedule.
-                    </Text>
-                )}
-
-                {schedule.days
-                    .slice()
-                    .sort((a, b) => a.date.localeCompare(b.date))
-                    .map((day) => (
-                        <div
-                            key={day.date}
-                            style={{
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: 6,
-                                padding: '8px 10px',
-                                marginBottom: 8,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginBottom: 6,
-                                }}
-                            >
-                                <Text strong style={{ fontSize: 13 }}>
-                                    📅 {dayjs(day.date).format('DD/MM/YYYY (ddd)')}
-                                </Text>
-                                <Button
-                                    size="small"
-                                    type="text"
-                                    danger
-                                    icon={<DeleteOutlined />}
-                                    onClick={() => removeDay(day.date)}
-                                />
-                            </div>
-
-                            <Space wrap style={{ marginBottom: 8 }}>
-                                {day.startTimes.length === 0 && (
-                                    <Text type="secondary" style={{ fontSize: 11 }}>
-                                        Time not yet selected
-                                    </Text>
-                                )}
-                                {day.startTimes.map((t) => (
-                                    <Tag
-                                        key={t}
-                                        closable={mode === 'manual'}
-                                        onClose={() => removeManual(day.date, t)}
-                                        icon={<ClockCircleOutlined />}
-                                        color="blue"
-                                        style={{ fontSize: 12 }}
-                                    >
-                                        {fmtTime(t)}
-                                    </Tag>
-                                ))}
-                            </Space>
-
-                            {/* Occupied times display */}
-                            {(occupiedTimesMap[day.date] || []).length > 0 && (
-                                <div style={{ marginTop: 4, marginBottom: 8 }}>
-                                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
-                                        Occupied times in this room:
-                                    </Text>
-                                    <Space wrap>
-                                        {(occupiedTimesMap[day.date] || []).map((t) => (
-                                            <Tag
-                                                key={t}
-                                                color="error"
-                                                style={{ fontSize: 11, cursor: 'not-allowed', opacity: 0.8 }}
-                                                icon={<ClockCircleOutlined />}
-                                            >
-                                                {t} (Occupied)
-                                            </Tag>
-                                        ))}
-                                    </Space>
-                                </div>
-                            )}
-
-                            {mode === 'preset' && (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                    {HOT_TIME_SLOTS.map((slot) => {
-                                        const checked = day.startTimes.map(fmtTime).includes(slot);
-                                        const isOccupied = (occupiedTimesMap[day.date] || []).includes(slot);
-                                        const isOverlappingSelected = isOverlappingWithSelected(
-                                            slot,
-                                            day.startTimes.filter((t) => fmtTime(t) !== slot),
-                                            duration
-                                        );
-                                        const isBeforeRelease = isBeforeReleaseTime(
-                                            day.date,
-                                            slot,
-                                            releaseDateOnly,
-                                            releaseTimeMinutes
-                                        );
-                                        const isDisabled = isOccupied || isOverlappingSelected || isBeforeRelease;
-
-                                        return (
-                                            <Tooltip
-                                                key={slot}
-                                                title={
-                                                    isOccupied
-                                                        ? 'Occupied (Cannot choose)'
-                                                        : isOverlappingSelected
-                                                            ? 'Overlaps with selected time'
-                                                            : isBeforeRelease
-                                                                ? 'Before release time'
-                                                                : checked
-                                                                    ? 'Deselect'
-                                                                    : 'Choose'
-                                                }
-                                            >
-                                                <Tag
-                                                    style={{
-                                                        cursor: isDisabled ? 'not-allowed' : 'pointer',
-                                                        userSelect: 'none',
-                                                        borderStyle: checked ? 'solid' : 'dashed',
-                                                        fontSize: 12,
-                                                        margin: 0,
-                                                        opacity: isDisabled ? 0.5 : 1,
-                                                        textDecoration: isDisabled ? 'line-through' : 'none',
-                                                    }}
-                                                    color={
-                                                        isOccupied
-                                                            ? 'error'
-                                                            : isOverlappingSelected
-                                                                ? 'warning'
-                                                                : isBeforeRelease
-                                                                    ? 'default'
-                                                                    : checked
-                                                                        ? 'blue'
-                                                                        : undefined
-                                                    }
-                                                    onClick={() => {
-                                                        if (isDisabled) return;
-                                                        handlePresetClick(day.date, slot, !checked);
-                                                    }}
-                                                >
-                                                    {slot}
-                                                </Tag>
-                                            </Tooltip>
-                                        );
-                                    })}
-                                </div>
-                            )}
-
-                            {mode === 'manual' && (
-                                <TimePicker
-                                    size="small"
-                                    format="HH:mm"
-                                    placeholder="Select hour"
-                                    minuteStep={5}
-                                    onSelect={(t) => addManual(day.date, t)}
-                                    value={null}
-                                    style={{ width: 140 }}
-                                />
-                            )}
-                        </div>
-                    ))}
-            </Card>
-        </>
-    );
-};
-
-// ─────────────────────────────────────────────────────────────
 // Main Update Modal
 // ─────────────────────────────────────────────────────────────
 const MovieUpdateModal: React.FC<MovieUpdateModalProps> = ({ open, movie, onClose, onSuccess }) => {
@@ -541,6 +97,7 @@ const MovieUpdateModal: React.FC<MovieUpdateModalProps> = ({ open, movie, onClos
             const res = await movieService.fetchMovieById(movieId);
             const fullMovieData = (res.data ?? res) as unknown as ComplexShowtimeRequestDTO;
             setFetchedMovie(fullMovieData);
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             message.error('Failed to fetch movie details');
         } finally {
@@ -595,7 +152,6 @@ const MovieUpdateModal: React.FC<MovieUpdateModalProps> = ({ open, movie, onClos
             return;
         }
         fetchMovieDetail(movie.id);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, movie?.id]);
 
     // ── Seed form when movie changes ──
@@ -1134,7 +690,7 @@ const MovieUpdateModal: React.FC<MovieUpdateModalProps> = ({ open, movie, onClos
                     <Space>
                         {currentStep === 0 && (
                             <Button type="primary" htmlType="submit">
-                                Done →
+                                Save or continue →
                             </Button>
                         )}
                         {currentStep === 1 && (

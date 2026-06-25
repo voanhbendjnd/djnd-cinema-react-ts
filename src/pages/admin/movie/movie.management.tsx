@@ -36,7 +36,7 @@ const MovieManagement: React.FC = () => {
           title: 'Title',
           dataIndex: 'title',
           render: (_, record) => (
-              <Link to={`/admin/movies/${record.id}`}>{record.title}</Link>
+              <Link to={`/manager/movies/${record.id}`}>{record.title}</Link>
               // <a onClick={() => navigate(`/admin/movies/${record.id}`)}>{record.title}</a>
           ),
       },
