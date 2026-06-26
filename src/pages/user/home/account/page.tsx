@@ -468,7 +468,6 @@ const AccountInfoPage: React.FC = () => {
           </span>
 
                         <ImgCrop rotationSlider cropShape="round" quality={1} aspect={1}>
-
                             <Upload {...uploadProps}>
                                 <div
                                     style={{

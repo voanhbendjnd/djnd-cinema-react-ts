@@ -16,12 +16,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole, allowedRo
 
   if (requiredRole && role !== requiredRole) {
     // Nếu có yêu cầu role mà không khớp, cho ra trang báo lỗi hoặc home
-    return <Navigate to="/login" replace />; // Tạm cho ra login
+    return <Navigate to="/" replace />; // Tạm cho ra login
   }
 
   if (allowedRoles && (!role || !allowedRoles.includes(role))) {
     // Nếu có danh sách role được cho phép mà role hiện tại không khớp
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

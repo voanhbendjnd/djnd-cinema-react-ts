@@ -80,7 +80,7 @@ const AppRoutes: React.FC = () => {
         </Route>
         <Route element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/account" element={<AccountInfoPage/>}/>
+            {/*<Route path="/account" element={<AccountInfoPage/>}/>*/}
         </Route>
         <Route element={<ProtectedRoute requiredRole="ROLE_CUSTOMER" />}>
             <Route element={<HomeLayout />} >
