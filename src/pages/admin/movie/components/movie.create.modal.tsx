@@ -1,500 +1,548 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  ModalForm,
-  ProFormText,
-  ProFormTextArea,
-  ProFormSelect,
-  ProFormDigit,
-  ProFormDateTimePicker,
-} from '@ant-design/pro-components';
-import {
-  Upload,
-  message,
-  notification,
-  Steps,
+  Avatar,
   Button,
   Card,
+  Spin,
   Tag,
-  Space,
   Typography,
-  Divider,
-  Tooltip,
-  Empty,
+  Upload,
+  notification,
 } from 'antd';
-import {
-  PlusOutlined,
-  LoadingOutlined,
-  ClockCircleOutlined,
-} from '@ant-design/icons';
-import type { UploadChangeParam } from 'antd/es/upload';
-import type { UploadFile, UploadProps } from 'antd/es/upload/interface';
-import { MovieGenre, MovieStatus} from '@/types/movie.types';
-import type {
-  AdminMovieDTO,
-  ComplexShowtimeRequestDTO,
-  RoomScheduleDTO,
-  RoomNameProjection,
-} from '@/types/movie.types';
-import { movieService } from '@/services/movie.service';
-import { baseURL } from '@/services/axiosClient';
-import dayjs from 'dayjs';
+import type { UploadProps, RcFile } from 'antd/es/upload';
 import ImgCrop from 'antd-img-crop';
-import '@/styles/movie.admin.css';
-import RoomScheduleEditor from "@/pages/admin/showtime/room.schedule.editor.tsx";
+import {
+  UserOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  IdcardOutlined,
+  EnvironmentOutlined,
+  CalendarOutlined,
+  StarOutlined,
+  EditOutlined,
+  SafetyCertificateOutlined,
+  CameraOutlined,
+  LoadingOutlined,
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
+import axiosClient, {baseURL} from '@/services/axiosClient';
 
-const { Text, Title } = Typography;
+const { Title, Text } = Typography;
 
-interface MovieCreateModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+interface AccountInfo {
+  id: number;
+  name: string;
+  login: string;
+  email: string;
+  gender: string;
+  activated: boolean;
+  avatarUrl: string | null;
+  dateOfBirth: string | null;
+  loyaltyPoints: string;
+  identityCard: string | null;
+  address: string | null;
+  phone: string | null;
+  createdDate: string;
+  lastModifiedDate: string;
+  createdBy: string;
+  lastModifiedBy: string;
 }
 
-const STEPS = ['Movie information', 'Choose room & Schedule', 'Confirm'];
+const GENDER_LABEL: Record<string, string> = {
+  MALE: 'Male',
+  FEMALE: 'Female',
+  OTHER: 'Other',
+};
 
+const GENDER_COLOR: Record<string, string> = {
+  MALE: '#1677ff',
+  FEMALE: '#eb2f96',
+  OTHER: '#722ed1',
+};
 
-// Main modal
-// ─────────────────────────────────────────────────────────────
-const MovieCreateModal: React.FC<MovieCreateModalProps> = ({ open, onClose, onSuccess }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [imageLoading, setImageLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string>();
+const InfoRow: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}> = ({ icon, label, value }) => (
+    <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 14,
+          padding: '14px 0',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}
+    >
+      <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 8,
+            background: 'rgba(230,57,70,0.12)',
+            border: '1px solid rgba(230,57,70,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#e63946',
+            fontSize: 15,
+            flexShrink: 0,
+          }}
+      >
+        {icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginBottom: 3 }}>
+          {label.toUpperCase()}
+        </div>
+        <div style={{ color: '#f0ece3', fontSize: 14 }}>{value ?? <span style={{ color: 'rgba(255,255,255,0.25)' }}>—</span>}</div>
+      </div>
+    </div>
+);
+
+const AccountInfoPage: React.FC = () => {
+  const [info, setInfo] = useState<AccountInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [api, contextHolder] = notification.useNotification();
 
-  // Step 1 form values snapshot
-  const [movieFields, setMovieFields] = useState<Partial<AdminMovieDTO>>({});
-
-  // Step 2: available rooms from backend
-  const [availableRooms, setAvailableRooms] = useState<RoomNameProjection[]>([]);
-  const [roomsLoading, setRoomsLoading] = useState(false);
-
-  // Step 2: selected schedules, keyed by roomId
-  const [roomSchedules, setRoomSchedules] = useState<Map<number, RoomScheduleDTO>>(new Map());
-
-  const [submitting, setSubmitting] = useState(false);
-
-  // Fetch rooms when modal opens or reaching step 2
   useEffect(() => {
-    if (open && currentStep === 1 && availableRooms.length === 0) {
-      setRoomsLoading(true);
-      movieService
-          .getRoomsForMovie()
-          .then((res: any) => setAvailableRooms(res?.data ?? res ?? []))
-          .catch(() => message.error('Not found rooms'))
-          .finally(() => setRoomsLoading(false));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, currentStep]);
+    axiosClient
+        .get<any>('/api/v1/account/info')
+        .then((res) => {
+          const data = res?.data ?? res;
+          setInfo(data);
+        })
+        .catch(() =>    api.error({
+          message:'Cannot loading data account',
+          placement: 'topRight'
+        }))
+        .finally(() => setLoading(false));
+  }, []);
 
-  const resetAll = () => {
-    setCurrentStep(0);
-    setImageUrl(undefined);
-    setMovieFields({});
-    setRoomSchedules(new Map());
-    setAvailableRooms([]);
-  };
-
-  const handleClose = () => {
-    resetAll();
-    onClose();
-  };
-
-  // ── Upload poster ──
-  const handleUploadChange: UploadProps['onChange'] = (info: UploadChangeParam<UploadFile>) => {
-    if (info.file.status === 'uploading') setImageLoading(true);
-  };
-
-  const customUpload = async (options: any) => {
-    const { file, onSuccess: uploadSuccess, onError } = options;
-    try {
-      setImageLoading(true);
-      const tempUrl = await movieService.uploadTempFile(file as File);
-      setImageUrl(tempUrl);
-      uploadSuccess(tempUrl);
-    } catch (error: any) {
-      onError(error);
+  const beforeCrop = (file: RcFile) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
       api.error({
-        message: 'Upload poster failure!',
+        message: 'Invalid file',
+        description: 'Please select an image file.',
         placement: 'topRight',
-        description: error.response?.data?.message,
       });
-    } finally {
-      setImageLoading(false);
     }
+    return isImage;
   };
 
-  // ── Room selection ──
-  const toggleRoom = (room: RoomNameProjection, checked: boolean) => {
-    const next = new Map(roomSchedules);
-    if (checked) {
-      next.set(room.id, { id: room.id, days: [] });
-    } else {
-      next.delete(room.id);
-    }
-    setRoomSchedules(next);
-  };
+  const uploadAvatar = async (croppedFile: File) => {
+    const formData = new FormData();
+    formData.append('avatarUrl', croppedFile);
 
-  const updateRoomSchedule = (roomId: number, schedule: RoomScheduleDTO) => {
-    const next = new Map(roomSchedules);
-    next.set(roomId, schedule);
-    setRoomSchedules(next);
-  };
-
-  // ── Validation helpers ──
-  const step2Valid = (): boolean => {
-    if (roomSchedules.size === 0) return false;
-    for (const sched of roomSchedules.values()) {
-      if (sched.days.length === 0) return false;
-      for (const day of sched.days) {
-        if (day.startTimes.length === 0) return false;
-      }
-    }
-    return true;
-  };
-
-  // ── Submit (SHOWING flow with rooms) ──
-  const handleSubmit = async () => {
-    if (!imageUrl) {
-      message.error('Please upload poster!');
-      setCurrentStep(0);
-      return;
-    }
-    setSubmitting(true);
+    setAvatarUploading(true);
     try {
-      const payload: ComplexShowtimeRequestDTO = {
-        ...(movieFields as AdminMovieDTO),
-        posterUrl: imageUrl,
-        releaseDate: movieFields.releaseDate
-            ? dayjs(movieFields.releaseDate as any).format('YYYY-MM-DDTHH:mm:ss')
-            : undefined,
-        rooms: Array.from(roomSchedules.values()),
-      };
-
-      await movieService.createMovie(payload as any);
-      api.success({ message: 'Create movie success', placement: 'topRight' });
-      resetAll();
-      onSuccess();
-    } catch (error: any) {
-      api.error({
-        message: 'Failure',
-        placement: 'topRight',
-        description: error.response?.data?.message,
+      await axiosClient.post('/api/v1/account/change-avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // If the backend moved the poster from movie-temps to the final
-      // folder before throwing the showtime-conflict error, the temp file
-      // referenced by `imageUrl` no longer exists. Retrying with the same
-      // imageUrl would silently send a dead path and the poster ends up
-      // null. Force a re-upload instead of resubmitting a stale reference.
-      setImageUrl(undefined);
-      message.warning('Please re-upload the poster image before retrying.');
-      setCurrentStep(0);
+      // Show a local preview immediately while we don't have the
+      // server-generated file name back from this endpoint.
+      const localPreviewUrl = URL.createObjectURL(croppedFile);
+      setInfo((prev) => (prev ? { ...prev, avatarUrl: localPreviewUrl } : prev));
+
+      api.success({
+        message: 'Avatar updated',
+        placement: 'topRight',
+      });
+    } catch (err) {
+      api.error({
+        message: 'Cannot update avatar',
+        placement: 'topRight',
+      });
     } finally {
-      setSubmitting(false);
+      setAvatarUploading(false);
     }
   };
 
-  // ── Render step content ──
-  const renderStep0 = () => (
+  const customUploadRequest: UploadProps['customRequest'] = async (options) => {
+    const { file, onSuccess, onError } = options;
+    try {
+      await uploadAvatar(file as File);
+      onSuccess?.({}, new XMLHttpRequest());
+    } catch (err) {
+      onError?.(err as Error);
+    }
+  };
+
+  if (loading) {
+    return (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+          <Spin size="large" />
+        </div>
+    );
+  }
+
+  if (!info) return null;
+
+  const initials = info.name
+      .split(' ')
+      .slice(-2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase();
+
+  const memberSince = dayjs(info.createdDate).format('MM/YYYY');
+  const lastUpdate = dayjs(info.lastModifiedDate).format('DD/MM/YYYY HH:mm');
+  const avatarSrc = info.avatarUrl
+      ? (info.avatarUrl.startsWith('blob:') ? info.avatarUrl : `${baseURL}/api/v1/files/${info.avatarUrl}`)
+      : undefined;
+  return (
       <>
-        <div style={{ display: 'flex', gap: 24 }}>
-          <div style={{ flex: 1 }}>
-            <ProFormText
-                name="title"
-                label="Movie title"
-                placeholder="Input title"
-                rules={[{ required: true, message: 'Title is required' }]}
-            />
-            <ProFormTextArea
-                name="description"
-                label="Description"
-                placeholder="Input description"
-                fieldProps={{ rows: 3 }}
-            />
-            <ProFormDigit
-                name="durationMinutes"
-                label="Duration (minutes)"
-                placeholder="EX: 120"
-                min={1}
-                rules={[{ required: true, message: 'Duration is required' }]}
-            />
-            <ProFormText name="director" label="Director" placeholder="Director" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <ProFormSelect
-                name="genre"
-                label="Genre"
-                options={Object.values(MovieGenre).map((g) => ({ label: g, value: g }))}
-                rules={[{ required: true, message: 'Please select genre' }]}
-            />
-            <ProFormDateTimePicker
-                name="releaseDate"
-                label="Release date"
-                fieldProps={{
-                  disabledDate: (current) => current && current < dayjs().startOf('day'),
+        {contextHolder}
+        <div
+            style={{
+              minHeight: '100vh',
+              background: '#0a0a0a',
+              padding: '32px 16px',
+              fontFamily: "'Barlow', sans-serif",
+            }}
+        >
+          <div style={{ maxWidth: 860, margin: '0 auto' }}>
+            {/* ── Page title ── */}
+            <div style={{ marginBottom: 28 }}>
+              <Title
+                  level={3}
+                  style={{
+                    color: '#f0ece3',
+                    margin: 0,
+                    fontFamily: "'Bebas Neue', sans-serif",
+                    letterSpacing: 3,
+                    fontSize: 32,
+                  }}
+              >
+                MY ACCOUNT
+              </Title>
+              <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, letterSpacing: 1 }}>
+                INFORMATION ACCOUNT
+              </Text>
+            </div>
+
+            {/* ── Hero card: avatar + name + points ── */}
+            <div
+                style={{
+                  background: 'linear-gradient(135deg, #1a0000 0%, #2d0a0a 50%, #111 100%)',
+                  border: '1px solid rgba(230,57,70,0.2)',
+                  borderRadius: 12,
+                  padding: '28px 28px 24px',
+                  marginBottom: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 24,
+                  flexWrap: 'wrap',
+                  position: 'relative',
+                  overflow: 'hidden',
                 }}
-                rules={[{ required: true, message: 'Release date is required' }]}
-            />
-            <ProFormSelect
-                name="status"
-                label="Status"
-                options={Object.values(MovieStatus).map((s) => ({ label: s, value: s }))}
-                rules={[{ required: true, message: 'Status is required' }]}
-            />
-            <div style={{ marginBottom: 8 }}>
-              <label style={{ display: 'block', marginBottom: 8 }}>Image poster *</label>
-              <ImgCrop rotationSlider aspect={2 / 3}>
-                <Upload
-                    name="file"
-                    listType="picture-card"
-                    className="avatar-uploader-poster"
-                    showUploadList={false}
-                    customRequest={customUpload}
-                    onChange={handleUploadChange}
-                    accept=".png,.jpeg,.jpg,.webp"
+            >
+              {/* Decorative bg text */}
+              <span
+                  style={{
+                    position: 'absolute',
+                    right: -10,
+                    top: -10,
+                    fontFamily: "'Bebas Neue', sans-serif",
+                    fontSize: 120,
+                    color: 'rgba(230,57,70,0.04)',
+                    userSelect: 'none',
+                    letterSpacing: -4,
+                    lineHeight: 1,
+                  }}
+              >
+            MEMBER
+          </span>
+
+              <div
+                  style={{
+                    position: 'relative',
+                    width: 96,
+                    height: 96,
+                    flexShrink: 0,
+                  }}
+              >
+                <Avatar
+                    size={96}
+                    src={avatarSrc}
+                    style={{
+                      background: 'linear-gradient(135deg, #e63946, #c1121f)',
+                      fontSize: 32,
+                      fontWeight: 700,
+                      border: '3px solid rgba(230,57,70,0.4)',
+                    }}
                 >
-                  {imageUrl ? (
-                      <img
-                          src={`${baseURL}/api/v1/files/movie-temps/${imageUrl}`}
-                          alt="poster"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                  ) : (
-                      <div>
-                        {imageLoading ? <LoadingOutlined /> : <PlusOutlined />}
-                        <div style={{ marginTop: 8 }}>Upload</div>
-                      </div>
-                  )}
-                </Upload>
-              </ImgCrop>
+                  {!info.avatarUrl && initials}
+                </Avatar>
+
+                {/* Edit avatar overlay button */}
+                <ImgCrop
+                    rotationSlider
+                    modalTitle="Edit avatar"
+                    aspect={1}
+                    quality={1}
+                    beforeCrop={beforeCrop}
+                >
+                  <Upload
+                      accept="image/*"
+                      showUploadList={false}
+                      customRequest={customUploadRequest}
+                      disabled={avatarUploading}
+                      style={{
+                        position: 'absolute',
+                        bottom: -2,
+                        right: -2,
+                        zIndex: 10,
+                        lineHeight: 0,
+                      }}
+                  >
+                    <div
+                        title="Change avatar"
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: '50%',
+                          background: '#e63946',
+                          border: '2px solid #0a0a0a',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: avatarUploading ? 'default' : 'pointer',
+                          color: '#fff',
+                          fontSize: 13,
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                        }}
+                    >
+                      {avatarUploading ? <LoadingOutlined spin /> : <CameraOutlined />}
+                    </div>
+                  </Upload>
+                </ImgCrop>
+              </div>
+
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+                  <Text
+                      style={{
+                        fontSize: 22,
+                        fontWeight: 700,
+                        color: '#f0ece3',
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        letterSpacing: 1,
+                      }}
+                  >
+                    {info.name}
+                  </Text>
+                  <Tag
+                      style={{
+                        background: 'rgba(230,57,70,0.15)',
+                        border: '1px solid rgba(230,57,70,0.3)',
+                        color: '#e63946',
+                        borderRadius: 3,
+                        fontSize: 10,
+                        letterSpacing: 1.5,
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontWeight: 600,
+                      }}
+                  >
+                    {info.activated ? 'ACTIVE' : 'INACTIVE'}
+                  </Tag>
+                  <Tag
+                      style={{
+                        background: GENDER_COLOR[info.gender] + '22',
+                        border: `1px solid ${GENDER_COLOR[info.gender]}55`,
+                        color: GENDER_COLOR[info.gender],
+                        borderRadius: 3,
+                        fontSize: 10,
+                        letterSpacing: 1.5,
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontWeight: 600,
+                      }}
+                  >
+                    {GENDER_LABEL[info.gender] ?? info.gender}
+                  </Tag>
+                </div>
+                <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>
+                  @{info.login} · Member since {memberSince}
+                </Text>
+              </div>
+
+              {/* Loyalty points */}
+              <div
+                  style={{
+                    background: 'rgba(255,215,0,0.06)',
+                    border: '1px solid rgba(255,215,0,0.2)',
+                    borderRadius: 10,
+                    padding: '16px 24px',
+                    textAlign: 'center',
+                    flexShrink: 0,
+                  }}
+              >
+                <StarOutlined style={{ color: '#ffd700', fontSize: 20, marginBottom: 6, display: 'block' }} />
+                <div
+                    style={{
+                      fontSize: 30,
+                      fontFamily: "'Bebas Neue', sans-serif",
+                      color: '#ffd700',
+                      letterSpacing: 2,
+                      lineHeight: 1,
+                    }}
+                >
+                  {info.loyaltyPoints}
+                </div>
+                <div style={{ fontSize: 10, letterSpacing: 2, color: 'rgba(255,215,0,0.6)', marginTop: 4 }}>
+                  LOYALTY POINTS
+                </div>
+              </div>
+            </div>
+
+            {/* ── Two-column info ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              {/* Left: contact */}
+              <Card
+                  title={
+                    <span
+                        style={{
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          letterSpacing: 2,
+                          fontSize: 13,
+                          color: 'rgba(255,255,255,0.55)',
+                        }}
+                    >
+                CONTACT INFORMATION
+              </span>
+                  }
+                  styles={{
+                    header: {
+                      background: 'transparent',
+                      borderBottom: '1px solid rgba(255,255,255,0.07)',
+                      minHeight: 44,
+                    },
+                    body: { padding: '0 20px' },
+                  }}
+                  style={{
+                    background: '#111',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                  }}
+              >
+                <InfoRow icon={<MailOutlined />} label="Email" value={info.email} />
+                <InfoRow icon={<PhoneOutlined />} label="Phone" value={info.phone} />
+                <InfoRow icon={<EnvironmentOutlined />} label="Address" value={info.address} />
+                <InfoRow
+                    icon={<CalendarOutlined />}
+                    label="Date of birth"
+                    value={info.dateOfBirth ? dayjs(info.dateOfBirth).format('DD/MM/YYYY') : null}
+                />
+              </Card>
+
+              {/* Right: identity + account meta */}
+              <Card
+                  title={
+                    <span
+                        style={{
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          letterSpacing: 2,
+                          fontSize: 13,
+                          color: 'rgba(255,255,255,0.55)',
+                        }}
+                    >
+                INFORMATION ACCOUNT
+              </span>
+                  }
+                  styles={{
+                    header: {
+                      background: 'transparent',
+                      borderBottom: '1px solid rgba(255,255,255,0.07)',
+                      minHeight: 44,
+                    },
+                    body: { padding: '0 20px' },
+                  }}
+                  style={{
+                    background: '#111',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                  }}
+              >
+                <InfoRow icon={<UserOutlined />} label="Username" value={info.login} />
+                <InfoRow
+                    icon={<IdcardOutlined />}
+                    label="CCCD / CMND"
+                    value={info.identityCard}
+                />
+                <InfoRow
+                    icon={<SafetyCertificateOutlined />}
+                    label="Create at"
+                    value={dayjs(info.createdDate).format('DD/MM/YYYY HH:mm')}
+                />
+                <InfoRow
+                    icon={<CalendarOutlined />}
+                    label="Last modified at"
+                    value={lastUpdate}
+                />
+              </Card>
+            </div>
+
+            {/* ── Actions ── */}
+            <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+              <Button
+                  icon={<EditOutlined />}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(230,57,70,0.4)',
+                    color: '#e63946',
+                    borderRadius: 4,
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    letterSpacing: 1,
+                    fontWeight: 600,
+                  }}
+              >
+                Edit
+              </Button>
+              <Button
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: 'rgba(255,255,255,0.55)',
+                    borderRadius: 4,
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    letterSpacing: 1,
+                  }}
+              >
+                Change password
+              </Button>
+            </div>
+
+            {/* ── Meta footer ── */}
+            <div
+                style={{
+                  marginTop: 24,
+                  padding: '12px 16px',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  borderRadius: 6,
+                  display: 'flex',
+                  gap: 20,
+                  flexWrap: 'wrap',
+                }}
+            >
+              <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11 }}>
+                Created by: <span style={{ color: 'rgba(255,255,255,0.45)' }}>{info.createdBy}</span>
+              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11 }}>
+                Edit by: <span style={{ color: 'rgba(255,255,255,0.45)' }}>{info.lastModifiedBy}</span>
+              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11 }}>
+                ID: <span style={{ color: 'rgba(255,255,255,0.45)' }}>#{info.id}</span>
+              </Text>
             </div>
           </div>
         </div>
       </>
-  );
 
-  const renderStep1 = () => (
-      <div>
-        {/* Room checkboxes */}
-        <Text strong>Select rooms:</Text>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '10px 0 18px' }}>
-          {roomsLoading && <Text type="secondary">Loading...</Text>}
-          {!roomsLoading && availableRooms.length === 0 && (
-              <Text type="secondary">Not found any room</Text>
-          )}
-          {availableRooms.map((room) => {
-            const checked = roomSchedules.has(room.id);
-            return (
-                <Tag.CheckableTag
-                    key={room.id}
-                    checked={checked}
-                    onChange={(c) => toggleRoom(room, c)}
-                    style={{
-                      padding: '4px 14px',
-                      fontSize: 13,
-                      borderRadius: 20,
-                      border: '1px dashed',
-                      cursor: 'pointer',
-                    }}
-                >
-                  {room.name}
-                </Tag.CheckableTag>
-            );
-          })}
-        </div>
-
-        <Divider />
-
-        {/* Schedule editors */}
-        {roomSchedules.size === 0 ? (
-            <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Select 1 or many room for create screenings"
-            />
-        ) : (
-            Array.from(roomSchedules.entries()).map(([roomId, schedule]) => {
-              const room = availableRooms.find((r) => r.id === roomId)!;
-              return (
-                  <RoomScheduleEditor
-                      key={roomId}
-                      room={room}
-                      schedule={schedule}
-                      onChange={(s) => updateRoomSchedule(roomId, s)}
-                      onRemove={() => toggleRoom(room, false)}
-                      duration={movieFields.durationMinutes || 0}
-                      releaseDate={movieFields.releaseDate as any}
-                  />
-              );
-            })
-        )}
-      </div>
-  );
-
-  const renderStep2 = () => {
-    const totalShowtimes = Array.from(roomSchedules.values()).reduce(
-        (acc, s) => acc + s.days.reduce((a, d) => a + d.startTimes.length, 0),
-        0
-    );
-    return (
-        <div>
-          <Title level={5}>Information movie</Title>
-          <Card size="small" style={{ marginBottom: 16 }}>
-            <Space direction="vertical" size={2}>
-              <Text>
-                🎬 <strong>{movieFields.title}</strong>
-              </Text>
-              <Text>⏱ {movieFields.durationMinutes} minutes</Text>
-              <Text>
-                🎭 {movieFields.genre} · {movieFields.status}
-              </Text>
-              <Text>🎬 Director: {movieFields.director || '-'}</Text>
-              <Text>
-                📅 Release date:{' '}
-                {movieFields.releaseDate
-                    ? dayjs(movieFields.releaseDate as any).format('DD/MM/YYYY HH:mm')
-                    : '-'}
-              </Text>
-            </Space>
-          </Card>
-
-          <Title level={5}>Schedule({totalShowtimes} screenings)</Title>
-          {Array.from(roomSchedules.entries()).map(([roomId, schedule]) => {
-            const room = availableRooms.find((r) => r.id === roomId)!;
-            return (
-                <Card key={roomId} size="small" title={room?.name} style={{ marginBottom: 8 }}>
-                  {schedule.days
-                      .slice()
-                      .sort((a, b) => a.date.localeCompare(b.date))
-                      .map((day) => (
-                          <div key={day.date} style={{ marginBottom: 6 }}>
-                            <Text type="secondary" style={{ marginRight: 8 }}>
-                              {dayjs(day.date).format('DD/MM/YYYY')}:
-                            </Text>
-                            <Space wrap>
-                              {day.startTimes.map((t) => (
-                                  <Tag key={t} color="blue" icon={<ClockCircleOutlined />}>
-                                    {t}
-                                  </Tag>
-                              ))}
-                            </Space>
-                          </div>
-                      ))}
-                </Card>
-            );
-          })}
-        </div>
-    );
-  };
-
-  return (
-      <>
-        {contextHolder}
-        <ModalForm<AdminMovieDTO>
-            title="Create movie"
-            open={open}
-            onOpenChange={(visible) => {
-              if (!visible) handleClose();
-            }}
-            modalProps={{
-              destroyOnClose: true,
-              onCancel: handleClose,
-              width: 860,
-            }}
-            submitter={false}
-            onFinish={async (values) => {
-              setMovieFields({ ...values, releaseDate: values.releaseDate as any });
-
-              if (values.status === MovieStatus.SHOWING) {
-                setCurrentStep(1);
-              } else {
-                try {
-                  await movieService.createMovie({
-                    ...values,
-                    posterUrl: imageUrl,
-                    releaseDate: dayjs(values.releaseDate).format('YYYY-MM-DDTHH:mm:ss'),
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-expect-error
-                    rooms: [],
-                  });
-                  api.success({ message: 'Create movie successfully!', placement: 'topRight' });
-                  resetAll();
-                  onSuccess();
-                  onClose();
-                } catch (error) {
-                  api.error({
-                    message: 'Create movie failure!',
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    //@ts-expect-error
-                    description: error.response?.data?.message || 'Failed to create',
-                    placement: 'topRight',
-                  });
-
-                  // Same poster-temp-file issue — clear stale imageUrl
-                  // and force re-upload before next attempt.
-                  setImageUrl(undefined);
-                  message.warning('Please re-upload the poster image before retrying.');
-                }
-              }
-
-              return false;
-            }}
-        >
-          {/* Step indicator */}
-          <Steps
-              current={currentStep}
-              size="small"
-              items={STEPS.map((title) => ({ title }))}
-              style={{ marginBottom: 24 }}
-          />
-          <Text type="secondary" style={{ display: 'block', marginBottom: 24 }}>
-            If the film is in showing mode, then the screening schedule for the rooms can be determined.
-          </Text>
-
-          {/* Step content */}
-          {currentStep === 0 && renderStep0()}
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-
-          {/* Navigation buttons outside ProForm submitter */}
-          <Divider />
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button onClick={currentStep === 0 ? handleClose : () => setCurrentStep((s) => s - 1)}>
-              {currentStep === 0 ? 'Close' : '← Back'}
-            </Button>
-
-            <Space>
-              {currentStep === 0 && (
-                  <Button type="primary" htmlType="submit">
-                    Save or continue →
-                  </Button>
-              )}
-
-              {currentStep === 1 && (
-                  <Tooltip
-                      title={
-                        !step2Valid()
-                            ? 'Each room needs at least one day of screening, and at least one hour of screening per day.'
-                            : ''
-                      }
-                  >
-                    <Button type="primary"
-                            // disabled={!step2Valid()}
-                            onClick={() => setCurrentStep(2)}>
-                      View summary →
-                    </Button>
-                  </Tooltip>
-              )}
-
-              {currentStep === 2 && (
-                  <Button type="primary" loading={submitting} onClick={handleSubmit}>
-                    Confirm & Create movie
-                  </Button>
-              )}
-            </Space>
-          </div>
-        </ModalForm>
-      </>
   );
 };
 
-export default MovieCreateModal;
+export default AccountInfoPage;

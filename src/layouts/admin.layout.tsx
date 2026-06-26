@@ -16,7 +16,8 @@ const AdminLayout: React.FC = () => {
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const [pathname, setPathname] = useState(location.pathname);
-
+    const { isAuthenticated, role } = useAuthStore();
+    const roleName = (isAuthenticated && role === 'ROLE_ADMIN') ? 'admin' : role === 'ROLE_MANAGER' ? 'manager' : 'customer';
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -36,40 +37,46 @@ const AdminLayout: React.FC = () => {
         splitMenus={false}
         fixSiderbar
         route={{
-          path: '/admin',
+          path: `${roleName}`,
           routes: [
+              ...(role === 'ROLE_ADMIN'
+                  ? [
+                      {
+                          path: '/admin/employees',
+                          name: 'Employee Management',
+                          icon: <UserOutlined />,
+                      },
+                      {
+                          path: '/admin/customers',
+                          name: 'Customer Management',
+                          icon: <UserOutlined />,
+                      },
+                      {
+                          path: '/admin/roles',
+                          name: 'Roles Management',
+                          icon: <KeyOutlined />,
+                      },
+                      {
+                          path: '/admin/permissions',
+                          name: 'Permission Management',
+                          icon: <SafetyCertificateOutlined />,
+                      },
+                  ]
+                  : []),
+
             {
-              path: '/admin/employees',
-              name: 'Employee Management',
-              icon: <UserOutlined />,
-            },
-            {
-              path: '/admin/customers',
-              name: 'Customer Management',
-              icon: <UserOutlined />,
-            },
-            {
-              path: '/manager/movies',
+                path: `/${roleName}/movies`,
               name: 'Movies Management',
               icon: <VideoCameraOutlined />,
             },
             {
-              path: '/manager/rooms',
+                path: `/${roleName}/rooms`,
               name: 'Rooms Management',
               icon: <MedicineBoxOutlined />,
             },
+
               {
-                  path: '/admin/roles',
-                  name: 'Roles Management',
-                  icon: <KeyOutlined />,
-              },
-              {
-                  path: '/admin/permissions',
-                  name: 'Permission Management',
-                  icon: <SafetyCertificateOutlined />,
-              },
-              {
-                  path: '/manager/ticket-lookup',
+                  path: `/${roleName}/ticket-lookup`,
                   name: 'Ticket Verification',
                   icon: <ScanOutlined />,
               },

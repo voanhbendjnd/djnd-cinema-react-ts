@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, message, Typography, Alert } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import '@/styles/auth.css';
@@ -10,7 +10,7 @@ const { Title, Text } = Typography;
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const navigate = useNavigate();
+ // const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
   
   const onFinish = async (values: any) => {
@@ -25,13 +25,14 @@ const Login: React.FC = () => {
 
         message.success("Login success");
 
-        if (user.role === 'ROLE_ADMIN') {
-          navigate('/admin/employees');
-        } else if (user.role === 'ROLE_MANAGER') {
-          navigate('/manager/movies');
-        } else {
-          navigate('/');
-        }
+        // if (user.role === 'ROLE_ADMIN') {
+        //   navigate('/admin/employees');
+        // } else if (user.role === 'ROLE_MANAGER') {
+        //   navigate('/manager/movies');
+        // } else {
+        //   navigate('/');
+        // }
+
       }
     } catch (error: any) {
 

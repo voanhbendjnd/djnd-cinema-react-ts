@@ -19,6 +19,7 @@ import PermissionManagement from "@/pages/admin/permission/permission.management
 import TicketLookup from '@/pages/admin/ticket-lookup';
 import HomePage from "@/pages/user/home/page.tsx";
 import HomeLayout from "@/pages/user/home/layout.tsx";
+import AccountInfoPage from "@/pages/user/home/account/page.tsx";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, role } = useAuthStore();
@@ -26,7 +27,18 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+          <Route
+              path="/login"
+              element={
+                  isAuthenticated
+                      ? role === 'ROLE_ADMIN'
+                          ? <Navigate to="/admin/employees" replace />
+                          : role === 'ROLE_MANAGER'
+                              ? <Navigate to="/manager/movies" replace />
+                              : <Navigate to="/" replace />
+                      : <Login />
+              }
+          />
         <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
           <Route
               path="/account/activate"
@@ -47,11 +59,11 @@ const AppRoutes: React.FC = () => {
             <Route path="/admin/customers" element={<CustomerManagement />} />
             <Route path="/admin/roles" element={<RoleManagement />} />
             <Route path="/admin/permissions" element={<PermissionManagement />} />
-            <Route path="/manager/ticket-lookup" element={<TicketLookup />} />
-            <Route path="/manager/movies" element={<MovieManagement />} />
-            <Route path="/manager/rooms" element={<RoomManagement />} />
-            <Route path="/manager/movies/:id" element={<MovieDetailPage />} />
-            <Route path="/manager/rooms/:id" element={<RoomDetailPage />} />
+            <Route path="/admin/ticket-lookup" element={<TicketLookup />} />
+            <Route path="/admin/movies" element={<MovieManagement />} />
+            <Route path="/admin/rooms" element={<RoomManagement />} />
+            <Route path="/admin/movies/:id" element={<MovieDetailPage />} />
+            <Route path="/admin/rooms/:id" element={<RoomDetailPage />} />
 
         </Route>
       </Route>
@@ -68,21 +80,28 @@ const AppRoutes: React.FC = () => {
         </Route>
         <Route element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/account" element={<AccountInfoPage/>}/>
+        </Route>
+        <Route element={<ProtectedRoute requiredRole="ROLE_CUSTOMER" />}>
+            <Route element={<HomeLayout />} >
+                <Route path="/account" element={<AccountInfoPage/>}/>
+            </Route>
         </Route>
 
+
       {/* Redirect all unknown to login or home */}
-        <Route
-            path="/"
-            element={
-                !isAuthenticated
-                    ? <HomePage />
-                    : role === 'ROLE_ADMIN'
-                        ? <Navigate to="/admin/employees" replace />
-                        : role === 'ROLE_MANAGER'
-                            ? <Navigate to="/manager/movies" replace />
-                            : <HomePage />
-            }
-        />
+      {/*  <Route*/}
+      {/*      path="/"*/}
+      {/*      element={*/}
+      {/*          !isAuthenticated*/}
+      {/*              ? <HomePage />*/}
+      {/*              : role === 'ROLE_ADMIN'*/}
+      {/*                  ? <Navigate to="/admin/employees" replace />*/}
+      {/*                  : role === 'ROLE_MANAGER'*/}
+      {/*                      ? <Navigate to="/manager/movies" replace />*/}
+      {/*                      : <HomePage />*/}
+      {/*      }*/}
+      {/*  />*/}
     </Routes>
   );
 };
