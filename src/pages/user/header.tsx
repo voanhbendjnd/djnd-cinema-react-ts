@@ -55,7 +55,7 @@ const HomeHeader: React.FC = () => {
                 <div className="topbar__inner">
                     <span className="topbar__item">🎟 NEWS & OFFERS</span>
                     <span className="topbar__item">🎫 MY TICKETS</span>
-                    <Link to={"/account"} style={{textDecoration:'none'}}>
+                    <Link to={"/profile"} style={{textDecoration:'none'}}>
                         <span className="topbar__item">👤 ACCOUNT</span>
 
                     </Link>

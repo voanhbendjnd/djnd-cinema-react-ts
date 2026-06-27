@@ -5,10 +5,11 @@ import {Button, message, Tag} from 'antd';
 import {EyeOutlined, PlusOutlined} from '@ant-design/icons';
 import {type ComplexShowtimeRequestDTO, MovieStatus} from '@/types/movie.types';
 import { movieService } from '@/services/movie.service';
-import MovieCreateModal from './components/movie.create.modal.tsx';
 import dayjs from 'dayjs';
 import MovieUpdateModal from "./components/movie.update.modal.tsx";
 import {Link, useNavigate} from "react-router-dom";
+import {useAuthStore} from "@/store/useAuthStore.ts";
+import MovieCreateModal from "@/pages/admin/movie/components/movie.create.modal.tsx";
 
 const MovieManagement: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
@@ -16,6 +17,9 @@ const MovieManagement: React.FC = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const navigate = useNavigate();
   const [selectedMovie, setSelectedMovie] = useState<ComplexShowtimeRequestDTO | null>(null);
+    const { isAuthenticated, role } = useAuthStore();
+
+    const roleName = (isAuthenticated && role === 'ROLE_ADMIN') ? 'admin' : role === 'ROLE_MANAGER' ? 'manager' : 'customer';
   const columns: ProColumns<ComplexShowtimeRequestDTO>[] = [
     {
       title: 'ID',
@@ -36,7 +40,7 @@ const MovieManagement: React.FC = () => {
           title: 'Title',
           dataIndex: 'title',
           render: (_, record) => (
-              <Link to={`/manager/movies/${record.id}`}>{record.title}</Link>
+              <Link to={`/${roleName}/movies/${record.id}`}>{record.title}</Link>
               // <a onClick={() => navigate(`/admin/movies/${record.id}`)}>{record.title}</a>
           ),
       },
@@ -84,7 +88,7 @@ const MovieManagement: React.FC = () => {
                   key="view"
                   type="link"
                   icon={<EyeOutlined />}
-                  onClick={() => navigate(`/manager/movies/${record.id}`)}
+                  onClick={() => navigate(`/${roleName}/movies/${record.id}`)}
               >
                   View
               </Button>,

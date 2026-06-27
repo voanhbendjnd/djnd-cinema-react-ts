@@ -32,7 +32,7 @@ import {
     CloseOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import axiosClient, {baseURL} from '@/services/axiosClient';
+import axiosClient, {baseURL} from '@/services/axiosClient.ts';
 
 const { Title, Text } = Typography;
 
@@ -170,7 +170,7 @@ const AccountInfoPage: React.FC = () => {
                 setInfo(data);
             })
             .catch(() => api.error({
-                message: 'Cannot loading data account',
+                message: 'Cannot loading data profile',
                 placement: 'topRight',
             }));
     };
@@ -374,7 +374,7 @@ const AccountInfoPage: React.FC = () => {
             await fetchInfo();
         } catch (err: any) {
             if (err?.errorFields) return;
-            const msg = err?.response?.data?.message || 'Failed to update account information';
+            const msg = err?.response?.data?.message || 'Failed to update profile information';
             api.error({ message: msg, placement: 'topRight' });
         } finally {
             setAccountSubmitting(false);

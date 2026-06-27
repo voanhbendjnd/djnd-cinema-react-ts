@@ -9,6 +9,7 @@ import { ROOM_STATUS_LABELS, ROOM_TYPE_LABELS } from '@/types/room.types';
 import {roomService} from "@/services/room.service.ts";
 import RoomCreateForm from "@/pages/admin/room/component/room.create.form.tsx";
 import RoomUpdateForm from "@/pages/admin/room/component/room.update.modal.tsx";
+import {useAuthStore} from "@/store/useAuthStore.ts";
 
 const statusColor: Record<string, string> = {
     ACTIVE: 'green',
@@ -23,6 +24,9 @@ const RoomManagement: React.FC = () => {
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
     const [selectedRoom, setSelectedRoom] = useState<RoomDTO | null>(null);
     const [api, contextHolder] = notification.useNotification();
+    const { isAuthenticated, role } = useAuthStore();
+
+    const roleName = (isAuthenticated && role === 'ROLE_ADMIN') ? 'admin' : role === 'ROLE_MANAGER' ? 'manager' : 'customer';
 
     const columns: ProColumns<RoomDTO>[] = [
         {
@@ -35,7 +39,7 @@ const RoomManagement: React.FC = () => {
             title: 'Name',
             dataIndex: 'name',
             render: (_, record) => (
-                <a onClick={() => navigate(`/admin/rooms/${record.id}`)}>{record.name}</a>
+                <a onClick={() => navigate(`/${roleName}/rooms/${record.id}`)}>{record.name}</a>
             ),
         },
         {
@@ -77,7 +81,7 @@ const RoomManagement: React.FC = () => {
                     key="view"
                     type="link"
                     icon={<EyeOutlined />}
-                    onClick={() => navigate(`/manager/rooms/${record.id}`)}
+                    onClick={() => navigate(`/${roleName}/rooms/${record.id}`)}
                 >
                     View detail
                 </Button>,

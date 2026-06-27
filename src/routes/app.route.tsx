@@ -18,8 +18,8 @@ import RoleManagement from "@/pages/admin/role/role.management.tsx";
 import PermissionManagement from "@/pages/admin/permission/permission.management.tsx";
 import TicketLookup from '@/pages/admin/ticket-lookup';
 import HomePage from "@/pages/user/home/page.tsx";
-import HomeLayout from "@/pages/user/home/layout.tsx";
-import AccountInfoPage from "@/pages/user/home/account/page.tsx";
+import HomeLayout from "@/pages/user/layout.tsx";
+import AccountInfoPage from "@/pages/user/profile/page.tsx";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, role } = useAuthStore();
@@ -80,11 +80,11 @@ const AppRoutes: React.FC = () => {
         </Route>
         <Route element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
-            {/*<Route path="/account" element={<AccountInfoPage/>}/>*/}
+            {/*<Route path="/profile" element={<AccountInfoPage/>}/>*/}
         </Route>
         <Route element={<ProtectedRoute requiredRole="ROLE_CUSTOMER" />}>
             <Route element={<HomeLayout />} >
-                <Route path="/account" element={<AccountInfoPage/>}/>
+                <Route path="/profile" element={<AccountInfoPage/>}/>
             </Route>
         </Route>
 
