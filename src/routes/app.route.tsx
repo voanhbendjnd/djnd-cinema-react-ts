@@ -20,6 +20,7 @@ import TicketLookup from '@/pages/admin/ticket-lookup';
 import HomePage from "@/pages/user/home/page.tsx";
 import HomeLayout from "@/pages/user/layout.tsx";
 import AccountInfoPage from "@/pages/user/profile/page.tsx";
+import ShowtimePriceManagement from "@/pages/admin/showtime-price/showtime.price.management.tsx";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, role } = useAuthStore();
@@ -61,6 +62,8 @@ const AppRoutes: React.FC = () => {
             <Route path="/admin/permissions" element={<PermissionManagement />} />
             <Route path="/admin/ticket-lookup" element={<TicketLookup />} />
             <Route path="/admin/movies" element={<MovieManagement />} />
+            <Route path="/admin/showtime/price" element={<ShowtimePriceManagement />} />
+
             <Route path="/admin/rooms" element={<RoomManagement />} />
             <Route path="/admin/movies/:id" element={<MovieDetailPage />} />
             <Route path="/admin/rooms/:id" element={<RoomDetailPage />} />
@@ -73,6 +76,8 @@ const AppRoutes: React.FC = () => {
                 <Route path="/manager/ticket-lookup" element={<TicketLookup />} />
                 <Route path="/manager/movies" element={<MovieManagement />} />
                 <Route path="/manager/rooms" element={<RoomManagement />} />
+                <Route path="/manager/showtime/price" element={<ShowtimePriceManagement />} />
+
                 <Route path="/manager/movies/:id" element={<MovieDetailPage />} />
                 <Route path="/manager/rooms/:id" element={<RoomDetailPage />} />
 

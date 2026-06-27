@@ -80,6 +80,11 @@ const AdminLayout: React.FC = () => {
                   name: 'Ticket Verification',
                   icon: <ScanOutlined />,
               },
+              {
+                  path: `/${roleName}/showtime/price`,
+                  name: 'Config price for seat',
+                  icon: <ScanOutlined />,
+              },
           ],
         }}
         location={{
