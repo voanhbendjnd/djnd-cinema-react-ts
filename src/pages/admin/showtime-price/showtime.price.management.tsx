@@ -427,6 +427,8 @@ const ShowtimePriceManagementPage: React.FC = () => {
                             min={0}
                             step={1000}
                             formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            //@ts-expect-error
                             parser={(v) => Number(v?.replace(/,/g, '') ?? 0)}
                         />
                     </Form.Item>
