@@ -21,6 +21,7 @@ import HomePage from "@/pages/user/home/page.tsx";
 import HomeLayout from "@/pages/user/layout.tsx";
 import AccountInfoPage from "@/pages/user/profile/page.tsx";
 import ShowtimePriceManagement from "@/pages/admin/showtime-price/showtime.price.management.tsx";
+import VNPayReturnPage from "@/pages/user/payment/vnpay-return.tsx";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, role } = useAuthStore();
@@ -85,6 +86,7 @@ const AppRoutes: React.FC = () => {
         </Route>
         <Route element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/payment-result" element={<VNPayReturnPage />} />
             {/*<Route path="/profile" element={<AccountInfoPage/>}/>*/}
         </Route>
         <Route element={<ProtectedRoute requiredRole="ROLE_CUSTOMER" />}>
