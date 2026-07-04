@@ -73,3 +73,45 @@ export const HOT_TIME_SLOTS: string[] = [
     '20:30', '21:00', '21:30',
     '22:00', '22:30',
 ];
+
+// ── Enums (khớp với Java enum) ────────────────────────────────────────────────
+export type MovieGenre =
+    | "ACTION"
+    | "COMEDY"
+    | "DRAMA"
+    | "HORROR"
+    | "ROMANCE"
+    | "FAMILY"
+    | "TRAGEDY"
+    | "HISTORICAL"
+    | "MUSICAL"
+    | "CARTOON"
+    | string;
+
+export type MovieStatus = "UPCOMING" | "SHOWING" | "ENDED" | string;
+
+export type RoomType = "R2D" | "R3D" | "RIMAX" | "R4DX" | string;
+
+// ── Showtime ──────────────────────────────────────────────────────────────────
+export interface ShowTimeResponse {
+    id: number;
+    startDateTime: string;  // ISO 8601: "2025-09-14T10:30:00"
+    endDateTime: string;
+    roomId: number;
+    roomName: string,
+    roomType: RoomType;
+}
+
+// ── Movie Details ─────────────────────────────────────────────────────────────
+export interface MovieDetails {
+    id: number;
+    title: string;
+    description: string;
+    durationMunutes: number; // typo từ BE — giữ nguyên để map đúng
+    genre: MovieGenre;
+    releaseDate: string;     // ISO 8601
+    posterUrl: string;
+    director: string;
+    movieStatus: MovieStatus;
+    showtimes: ShowTimeResponse[];
+}

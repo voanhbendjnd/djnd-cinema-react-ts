@@ -52,5 +52,23 @@ export const bookingService = {
     getMoviesToday: async (): Promise<IBackendRes<any>> => { 
         const response = await axiosClient.get('/api/v1/admin/movies/today');
         return response as unknown as IBackendRes<any>;
+    },
+
+    // 5. Nhân viên tạo booking
+    createBookingByStaff: async (payload: {
+        showtimeId: number;
+        seatIds: number[];
+        paymentMethod: string;
+        customerId?: number | null;
+        isNotMember?: boolean;
+    }): Promise<IBackendRes<any>> => {
+        const response = await axiosClient.post('/api/v1/bookings/with-staff', payload);
+        return response as unknown as IBackendRes<any>;
+    },
+
+    // 6. Tìm kiếm customer bằng email (dành cho POS)
+    getCustomerByEmail: async (email: string): Promise<IBackendRes<any>> => {
+        const response = await axiosClient.get(`/api/v1/bookings/customer-by-email?email=${encodeURIComponent(email)}`);
+        return response as unknown as IBackendRes<any>;
     }
 };

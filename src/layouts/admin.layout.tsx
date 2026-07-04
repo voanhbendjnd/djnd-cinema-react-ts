@@ -6,7 +6,7 @@ import {
     UserOutlined,
     LogoutOutlined,
     VideoCameraOutlined,
-    MedicineBoxOutlined, KeyOutlined, SafetyCertificateOutlined, ScanOutlined
+    MedicineBoxOutlined, KeyOutlined, SafetyCertificateOutlined, ScanOutlined, TagOutlined
 } from '@ant-design/icons';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authService } from '@/services/auth.service';
@@ -17,7 +17,13 @@ const AdminLayout: React.FC = () => {
   const { user, logout } = useAuthStore();
   const [pathname, setPathname] = useState(location.pathname);
     const { isAuthenticated, role } = useAuthStore();
-    const roleName = (isAuthenticated && role === 'ROLE_ADMIN') ? 'admin' : role === 'ROLE_MANAGER' ? 'manager' : 'customer';
+    const roleName = (isAuthenticated && role === 'ROLE_ADMIN') 
+        ? 'admin' 
+        : role === 'ROLE_MANAGER' 
+            ? 'manager' 
+            : role === 'ROLE_STAFF' 
+                ? 'staff' 
+                : 'customer';
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -64,27 +70,45 @@ const AdminLayout: React.FC = () => {
                   ]
                   : []),
 
-            {
-                path: `/${roleName}/movies`,
-              name: 'Movies Management',
-              icon: <VideoCameraOutlined />,
-            },
-            {
-                path: `/${roleName}/rooms`,
-              name: 'Rooms Management',
-              icon: <MedicineBoxOutlined />,
-            },
+              ...((role === 'ROLE_ADMIN' || role === 'ROLE_MANAGER')
+                  ? [
+                      {
+                          path: `/${roleName}/movies`,
+                          name: 'Movies Management',
+                          icon: <VideoCameraOutlined />,
+                      },
+                      {
+                          path: `/${roleName}/rooms`,
+                          name: 'Rooms Management',
+                          icon: <MedicineBoxOutlined />,
+                      },
+                      {
+                          path: `/${roleName}/showtime/price`,
+                          name: 'Config price for seat',
+                          icon: <ScanOutlined />,
+                      },
+                      {
+                          path: `/${roleName}/promotions`,
+                          name: 'Promotion Management',
+                          icon: <TagOutlined />,
+                      },
+                  ]
+                  : []),
 
-              {
-                  path: `/${roleName}/ticket-lookup`,
-                  name: 'Ticket Verification',
-                  icon: <ScanOutlined />,
-              },
-              {
-                  path: `/${roleName}/showtime/price`,
-                  name: 'Config price for seat',
-                  icon: <ScanOutlined />,
-              },
+              ...((role === 'ROLE_ADMIN' || role === 'ROLE_MANAGER' || role === 'ROLE_STAFF')
+                  ? [
+                      {
+                          path: `/${roleName}/booking`,
+                          name: 'POS Booking',
+                          icon: <VideoCameraOutlined />,
+                      },
+                      {
+                          path: `/${roleName}/ticket-lookup`,
+                          name: 'Ticket Verification',
+                          icon: <ScanOutlined />,
+                      },
+                  ]
+                  : []),
           ],
         }}
         location={{

@@ -115,7 +115,7 @@ const ShowtimePriceManagementPage: React.FC = () => {
         form.resetFields();
         form.setFieldsValue({
             dayType: 'WEEKDAY',
-            seatType: 'NORMAL',
+            seatType: 'STANDARD',
         });
         setModalOpen(true);
     };

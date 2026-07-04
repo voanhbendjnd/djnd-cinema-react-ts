@@ -88,6 +88,17 @@ declare global{
         result: User[];
     }
 
+    interface IPromotion {
+        id?: number;
+        title: string;
+        detail?: string;
+        discountPercentage: number;
+        startTime: string;   // ISO LocalDateTime string e.g. "2025-12-01T00:00:00"
+        endTime: string;
+        thumbnailUrl?: string;
+        status?: 'Active' | 'Upcoming' | 'Expired';
+    }
+
 
 
 }

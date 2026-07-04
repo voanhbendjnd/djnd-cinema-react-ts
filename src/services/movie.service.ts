@@ -1,6 +1,6 @@
 import axiosClient from '@/services/axiosClient';
-import type {AdminMovieDTO, ComplexShowtimeRequestDTO} from '@/types/movie.types';
-import type {RoomDTO} from "@/types/room.types.ts";
+import type { AdminMovieDTO, ComplexShowtimeRequestDTO, MovieDetails } from '@/types/movie.types';
+import type { RoomDTO } from "@/types/room.types.ts";
 
 export const movieService = {
   uploadTempFile: async (file: File): Promise<string> => {
@@ -23,20 +23,34 @@ export const movieService = {
     const response = await axiosClient.put('/api/v1/admin/movies', data);
     return response as unknown as IBackendRes<AdminMovieDTO>;
   },
-  fetchMovieById: async (id:number): Promise<IBackendRes<ComplexShowtimeRequestDTO>> => {
+  fetchMovieById: async (id: number): Promise<IBackendRes<ComplexShowtimeRequestDTO>> => {
     const response = await axiosClient.get(`/api/v1/admin/movies/${id}`);
     return response as unknown as IBackendRes<ComplexShowtimeRequestDTO>;
   },
-  getRoomsForMovie: async ():Promise<IBackendRes<RoomDTO>> => {
+  getRoomsForMovie: async (): Promise<IBackendRes<RoomDTO>> => {
     const response = await axiosClient.get('/api/v1/admin/movies/rooms');
 
-          return response as unknown as IBackendRes<RoomDTO>;
+    return response as unknown as IBackendRes<RoomDTO>;
   },
 
-  fetchAllMovieWithPagination: async (q: string, page: number, size: number, sort:string): Promise<IBackendRes<IModelPaginate<ComplexShowtimeRequestDTO>>> => {
+  fetchAllMovieWithPagination: async (q: string, page: number, size: number, sort: string): Promise<IBackendRes<IModelPaginate<ComplexShowtimeRequestDTO>>> => {
     const response = await axiosClient.get('/api/v1/admin/movies', {
       params: { q, page, size, sort },
     });
     return response as unknown as IBackendRes<IModelPaginate<ComplexShowtimeRequestDTO>>;
   },
+
+  getMovieDetail: async (
+    movieId: number
+  ): Promise<MovieDetails> => {
+    const response = await axiosClient.get(
+      `/api/v1/movies/${movieId}`
+    );
+
+    const payload = (response as { data?: unknown } | undefined)?.data ?? response;
+    const movieDetail = (payload as { data?: unknown } | undefined)?.data ?? payload;
+
+    return movieDetail as MovieDetails;
+  },
+
 };

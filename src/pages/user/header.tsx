@@ -12,7 +12,7 @@ const QUICK_LINKS = [
         icon: nowShowing,
         label: 'Movie',
         sub: 'Movie showing or upcoming',
-        path:'/'
+        path: '/movies', // [2026-06-27] Mở trang danh sách phim
     },
     {
         icon: newsOffers,

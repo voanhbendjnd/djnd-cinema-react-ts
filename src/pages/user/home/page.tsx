@@ -7,6 +7,7 @@ import 'dayjs/locale/en';
 import dayjs from 'dayjs';
 import '@/styles/home.css'
 import BookingModal from "@/pages/user/booking/booking.modal.tsx";
+import {generateMovieSlug} from "@/utils/generate.slug.ts";
 
 export interface PublishMovieProjection {
     id: number;
@@ -73,6 +74,7 @@ const MovieCard: React.FC<{ movie: PublishMovieProjection; onBook: (id: number, 
                                                                                                              }) => {
     const [hovered, setHovered] = useState(false);
     const src = `${baseURL}/api/v1/files/${movie.posterUrl}`;
+    const detailPath = generateMovieSlug(movie.title, movie.id);
 
     return (
         <div
@@ -89,7 +91,7 @@ const MovieCard: React.FC<{ movie: PublishMovieProjection; onBook: (id: number, 
                     <div className="movie-card__overlay">
                         <p className="movie-card__overlay-title">{movie.title}</p>
                         <div className="movie-card__overlay-actions">
-                            <Link to={`/movies/${movie.id}`}>
+                            <Link to={detailPath}>
                                 <Button type="default" ghost size="small" icon={<PlayCircleOutlined />}>
                                     View Details
                                 </Button>

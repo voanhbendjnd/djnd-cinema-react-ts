@@ -1,5 +1,5 @@
 import { BrowserRouter } from 'react-router-dom';
-import { ConfigProvider, theme } from 'antd';
+import { App as AntdApp, ConfigProvider, theme } from 'antd';
 import { ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
 import enUS from 'antd/locale/en_US';
 import AppRoutes from './routes/app.route.tsx';
@@ -27,11 +27,13 @@ function App() {
         },
       }}
     >
-      <ProConfigProvider intl={enUSIntl}>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </ProConfigProvider>
+      <AntdApp>
+        <ProConfigProvider intl={enUSIntl}>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </ProConfigProvider>
+      </AntdApp>
     </ConfigProvider>
   );
 }
