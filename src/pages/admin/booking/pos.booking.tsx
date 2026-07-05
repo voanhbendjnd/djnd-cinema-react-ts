@@ -29,7 +29,7 @@ import axiosClient from '@/services/axiosClient';
 import { bookingService } from '@/services/booking.service';
 import { useAuthStore } from "@/store/useAuthStore.ts";
 import '@/styles/auth.css'; // Reuse auth background styles if appropriate
-
+import '@/styles/pos-radio.css';
 const { Option } = Select;
 const { Title } = Typography;
 import 'dayjs/locale/en';
@@ -556,30 +556,28 @@ export const POSBookingPage: React.FC = () => {
             } else {
                 api.success({
                     message: 'Booking Successful',
-                    description: 'Tickets printed successfully',
+                    description: 'Tickets booked successfully. Fetching tickets for printing...',
                     placement: 'topRight'
                 });
 
-                const selectedMovie = movies.find(m => m.id === selectedMovieId);
-                const chosenSeatsDetails = selectedSeats
-                    .map(id => seatData?.seats.find(s => s.id === id))
-                    .filter(Boolean) as SeatLayoutDTO[];
+                try {
+                    const ticketRes = await axiosClient.get(`/api/v1/tickets/booking/${data?.bookingId}`);
+                    const tickets = ticketRes?.data ?? ticketRes;
 
-                setReceiptData({
-                    bookingId: data?.bookingId || `BK-${Date.now()}`,
-                    movieTitle: selectedMovie?.title || 'Unknown Movie',
-                    showtimeDate: selectedDate.format('dddd, MMMM DD, YYYY'),
-                    showtimeTime: dayjs(selectedShowtime.startDateTime).format('HH:mm'),
-                    room: selectedShowtime.roomId,
-                    seats: chosenSeatsDetails.map(s => `${s.seatRow}${s.seatNo}`).join(', '),
-                    totalPrice: getTotalPrice(),
-                    cashier: user?.name || user?.login || 'Staff Counter',
-                    paymentMethod: paymentMethod,
-                    customerName: customerType === 'member' ? verifiedCustomer?.name : 'Walk-in Guest',
-                    customerEmail: customerType === 'member' ? verifiedCustomer?.email : 'not-member@cinema.com',
-                });
+                    setReceiptData({
+                        bookingId: data?.bookingId || `BK-${Date.now()}`,
+                        customerName: customerType === 'member' ? verifiedCustomer?.name : 'Walk-in Guest',
+                        paymentMethod: paymentMethod,
+                        cashier: user?.name || user?.login || 'Staff Counter',
+                        totalPrice: getTotalPrice(),
+                        room: selectedShowtime.roomId,
+                        tickets: tickets || []
+                    });
 
-                setShowReceiptModal(true);
+                    setShowReceiptModal(true);
+                } catch (err) {
+                    api.error({ message: 'Print Error', description: 'Failed to fetch tickets for printing', placement: 'topRight' });
+                }
 
                 const updatedSeatsRes = await axiosClient.get<ResSeatAtRoomBookingDTO>(`/api/v1/showtimes/${selectedShowtime.showtimeId}/seats`);
                 setSeatData(updatedSeatsRes?.data ?? updatedSeatsRes);
@@ -752,6 +750,7 @@ export const POSBookingPage: React.FC = () => {
                         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                             <Radio.Group
                                 value={customerType}
+                                className="pos-radio-group"
                                 onChange={(e) => setCustomerType(e.target.value)}
                                 buttonStyle="solid"
                                 style={{ width: '100%', display: 'flex' }}
@@ -825,6 +824,7 @@ export const POSBookingPage: React.FC = () => {
                                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>PAYMENT METHOD</div>
                                 <Radio.Group
                                     value={paymentMethod}
+                                    className="pos-radio-group"
                                     onChange={(e) => setPaymentMethod(e.target.value)}
                                     buttonStyle="solid"
                                     style={{ width: '100%', display: 'flex' }}
@@ -961,7 +961,7 @@ export const POSBookingPage: React.FC = () => {
                 styles={{ content: { background: '#181818', color: '#fff' } }}
             >
                 {receiptData && (
-                    <div style={{ padding: '10px 0' }}>
+                    <div style={{ padding: '10px 0', maxHeight: '60vh', overflowY: 'auto' }}>
                         <div
                             ref={receiptRef}
                             style={{
@@ -974,66 +974,79 @@ export const POSBookingPage: React.FC = () => {
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                             }}
                         >
-                            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                                <div style={{ fontSize: 18, fontWeight: 'bold', letterSpacing: 1 }}>PREMIERE CINEMA</div>
-                                <div style={{ fontSize: 10, color: '#666' }}>POS TICKET OUTLET</div>
-                                <div style={{ fontSize: 12, marginTop: 4 }}>ID: {receiptData.bookingId}</div>
-                            </div>
+                            {receiptData.tickets?.map((ticket: any, index: number) => (
+                                <div key={ticket.id || index} style={{ marginBottom: index !== receiptData.tickets.length - 1 ? 24 : 0, pageBreakAfter: index !== receiptData.tickets.length - 1 ? 'always' : 'auto' }}>
+                                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                                        <div style={{ fontSize: 18, fontWeight: 'bold', letterSpacing: 1 }}>PREMIERE CINEMA</div>
+                                        <div style={{ fontSize: 10, color: '#666' }}>POS TICKET OUTLET</div>
+                                        <div style={{ fontSize: 12, marginTop: 4 }}>Booking ID: {receiptData.bookingId}</div>
+                                        <div style={{ fontSize: 12 }}>Ticket Code: {ticket.ticketCode}</div>
+                                    </div>
 
-                            <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
+                                    <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
 
-                            <div style={{ marginBottom: 12 }}>
-                                <div style={{ fontSize: 14, fontWeight: 'bold' }}>{receiptData.movieTitle.toUpperCase()}</div>
-                                <div style={{ fontSize: 12, marginTop: 4 }}>
-                                    <strong>Date:</strong> {receiptData.showtimeDate}
+                                    <div style={{ marginBottom: 12 }}>
+                                        <div style={{ fontSize: 14, fontWeight: 'bold' }}>{ticket.movieTitle?.toUpperCase()}</div>
+                                        <div style={{ fontSize: 12, marginTop: 4 }}>
+                                            <strong>Date:</strong> {ticket.releaseDate}
+                                        </div>
+                                        <div style={{ fontSize: 12 }}>
+                                            <strong>Time:</strong> {ticket.startDateTime} - {ticket.endDateTime}
+                                        </div>
+                                        <div style={{ fontSize: 12 }}>
+                                            <strong>Room:</strong> Room {receiptData.room}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
+
+                                    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 13, fontWeight: 'bold', marginBottom: 6 }}>
+                                        <span>SEAT:</span>
+                                        <span>{ticket.seatPosition} ({ticket.seatType})</span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                                        <span>Customer:</span>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>
+                                            {receiptData.customerName}
+                                        </span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 4 }}>
+                                        <span>Cashier:</span>
+                                        <span>{ticket.cashBy || receiptData.cashier}</span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 4 }}>
+                                        <span>Payment:</span>
+                                        <span>{ticket.paymentMethod || receiptData.paymentMethod}</span>
+                                    </div>
+
+                                    <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
+
+                                    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: 13, fontWeight: 'bold' }}>TICKET PRICE:</span>
+                                        <span style={{ fontSize: 16, fontWeight: 'bold' }}>
+                                            {ticket.price ? ticket.price.toLocaleString('vi-VN') : '0'}đ
+                                        </span>
+                                    </div>
+
+                                    <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
+
+                                    <div style={{ textAlign: 'center', fontSize: 9, color: '#666', marginTop: 8 }}>
+                                        THANK YOU FOR CHOOSING PREMIERE!<br />
+                                        ENJOY YOUR MOVIE!
+                                    </div>
+                                    
+                                    {index !== receiptData.tickets.length - 1 && (
+                                        <div style={{ borderTop: '2px dashed #000', margin: '24px 0' }}></div>
+                                    )}
                                 </div>
-                                <div style={{ fontSize: 12 }}>
-                                    <strong>Time:</strong> {receiptData.showtimeTime}
-                                </div>
-                                <div style={{ fontSize: 12 }}>
-                                    <strong>Room:</strong> Room {receiptData.room}
-                                </div>
-                            </div>
-
-                            <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
-
-                            <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 13, fontWeight: 'bold', marginBottom: 6 }}>
-                                <span>SEAT(S):</span>
-                                <span>{receiptData.seats}</span>
-                            </div>
-
-                            <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                                <span>Customer:</span>
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>
-                                    {receiptData.customerName}
-                                </span>
-                            </div>
-
-                            <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 4 }}>
-                                <span>Cashier:</span>
-                                <span>{receiptData.cashier}</span>
-                            </div>
-
-                            <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 4 }}>
-                                <span>Payment:</span>
-                                <span>{receiptData.paymentMethod}</span>
-                            </div>
-
-                            <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
-
-                            <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: 13, fontWeight: 'bold' }}>TOTAL PAID:</span>
-                                <span style={{ fontSize: 16, fontWeight: 'bold' }}>
-                                    {receiptData.totalPrice.toLocaleString('vi-VN')}đ
-                                </span>
-                            </div>
-
-                            <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
-
-                            <div style={{ textAlign: 'center', fontSize: 9, color: '#666', marginTop: 8 }}>
-                                THANK YOU FOR CHOOSING PREMIERE!<br />
-                                ENJOY YOUR MOVIE!
-                            </div>
+                            ))}
+                            
+                            {(!receiptData.tickets || receiptData.tickets.length === 0) && (
+                                <div style={{ textAlign: 'center', padding: '20px' }}>No tickets available</div>
+                            )}
                         </div>
                     </div>
                 )}

@@ -1,0 +1,35 @@
+/* ─── POS Radio.Button dark theme override ─────────────────── */
+
+/* Base unselected state */
+.pos-radio-group .ant-radio-button-wrapper {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    transition: all 0.2s ease;
+}
+
+/* Hover */
+.pos-radio-group .ant-radio-button-wrapper:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgb(67 194 20 / 0.4) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Selected / checked */
+.pos-radio-group .ant-radio-button-wrapper-checked {
+    background: rgb(69 168 47 / 0.18) !important;
+    border-color: #00ff33 !important;
+    color: #00ff33 !important;
+    box-shadow: none !important;
+}
+
+/* The inner pseudo-border antd injects between siblings when checked */
+.pos-radio-group .ant-radio-button-wrapper-checked::before,
+.pos-radio-group .ant-radio-button-wrapper-checked:not(:first-child)::before {
+    background-color: #00ff33 !important;
+}
+
+/* Focus ring */
+.pos-radio-group .ant-radio-button-wrapper-checked:focus-within {
+    box-shadow: 0 0 0 2px rgb(65 194 51 / 0.25) !important;
+}
