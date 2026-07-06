@@ -12,6 +12,7 @@
   "dependencies": {
     "@ant-design/icons": "^6.2.5",
     "@ant-design/pro-components": "^2.8.10",
+    "@stomp/stompjs": "^7.3.0",
     "antd": "^5.29.3",
     "antd-img-crop": "^4.30.0",
     "axios": "^1.17.0",

@@ -25,7 +25,8 @@ import {
     DollarOutlined
 } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
-import axiosClient from '@/services/axiosClient';
+import { Client } from '@stomp/stompjs';
+import axiosClient, { baseURL } from '@/services/axiosClient';
 import { bookingService } from '@/services/booking.service';
 import { useAuthStore } from "@/store/useAuthStore.ts";
 import '@/styles/auth.css'; // Reuse auth background styles if appropriate
@@ -466,6 +467,55 @@ export const POSBookingPage: React.FC = () => {
                 api.error({ message: 'Failed to load seat layout', placement: 'topRight' });
             })
             .finally(() => setLoadingSeats(false));
+    }, [selectedShowtime]);
+
+    // Real-time seat updates via WebSocket
+    useEffect(() => {
+        if (!selectedShowtime) return;
+
+        const showtimeId = selectedShowtime.showtimeId;
+        const wsUrl = baseURL.replace(/^http/, 'ws') + '/ws/websocket';
+
+        const stompClient = new Client({
+            brokerURL: wsUrl,
+            reconnectDelay: 5000,
+            onConnect: () => {
+                stompClient.subscribe(`/topic/showtime/${showtimeId}/seats`, (message) => {
+                    try {
+                        const payload = JSON.parse(message.body) as {
+                            bookingStatus: string;
+                            seatIds: number[];
+                        };
+                        if (payload.bookingStatus === 'SOLD' && payload.seatIds?.length > 0) {
+                            const soldIds = new Set(payload.seatIds);
+                            setSeatData((prev) => {
+                                if (!prev) return prev;
+                                return {
+                                    ...prev,
+                                    seats: prev.seats.map((seat) =>
+                                        soldIds.has(seat.id)
+                                            ? { ...seat, bookingStatus: 'SOLD' as const }
+                                            : seat
+                                    ),
+                                };
+                            });
+                            setSelectedSeats((prev) => prev.filter((id) => !soldIds.has(id)));
+                        }
+                    } catch (e) {
+                        console.error('[POS WS] Failed to parse seat update', e);
+                    }
+                });
+            },
+            onStompError: (frame) => {
+                console.error('[POS WS] STOMP error', frame);
+            },
+        });
+
+        stompClient.activate();
+
+        return () => {
+            stompClient.deactivate();
+        };
     }, [selectedShowtime]);
 
     // Check customer logic

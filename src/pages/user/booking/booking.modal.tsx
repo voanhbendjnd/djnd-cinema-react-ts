@@ -19,7 +19,8 @@ import {
     LoginOutlined,
 } from '@ant-design/icons';
 import 'dayjs/locale/en';
-import axiosClient from '@/services/axiosClient';
+import axiosClient, { baseURL } from '@/services/axiosClient';
+import { Client } from '@stomp/stompjs';
 import dayjs, { Dayjs } from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from "@/store/useAuthStore.ts";
@@ -514,6 +515,55 @@ export const BookingModal: React.FC<{
             })
             .finally(() => setLoading(false));
     }, [selectedShowtime]);
+
+    // Real-time seat updates via WebSocket (active only when on seat selection step)
+    useEffect(() => {
+        if (step !== 'seat' || !selectedShowtime) return;
+
+        const showtimeId = selectedShowtime.showtimeId;
+        const wsUrl = baseURL.replace(/^http/, 'ws') + '/ws/websocket';
+
+        const stompClient = new Client({
+            brokerURL: wsUrl,
+            reconnectDelay: 5000,
+            onConnect: () => {
+                stompClient.subscribe(`/topic/showtime/${showtimeId}/seats`, (message) => {
+                    try {
+                        const payload = JSON.parse(message.body) as {
+                            bookingStatus: string;
+                            seatIds: number[];
+                        };
+                        if (payload.bookingStatus === 'SOLD' && payload.seatIds?.length > 0) {
+                            const soldIds = new Set(payload.seatIds);
+                            setSeatData((prev) => {
+                                if (!prev) return prev;
+                                return {
+                                    ...prev,
+                                    seats: prev.seats.map((seat) =>
+                                        soldIds.has(seat.id)
+                                            ? { ...seat, bookingStatus: 'SOLD' as const }
+                                            : seat
+                                    ),
+                                };
+                            });
+                            setSelectedSeats((prev) => prev.filter((id) => !soldIds.has(id)));
+                        }
+                    } catch (e) {
+                        console.error('[Booking WS] Failed to parse seat update', e);
+                    }
+                });
+            },
+            onStompError: (frame) => {
+                console.error('[Booking WS] STOMP error', frame);
+            },
+        });
+
+        stompClient.activate();
+
+        return () => {
+            stompClient.deactivate();
+        };
+    }, [step, selectedShowtime]);
 
     // ─────────────────────────────────────────────────────────
     // HANDLERS
