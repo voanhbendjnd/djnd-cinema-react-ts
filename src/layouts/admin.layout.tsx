@@ -92,6 +92,11 @@ const AdminLayout: React.FC = () => {
                           name: 'Promotion Management',
                           icon: <TagOutlined />,
                       },
+                      {
+                          path: `/${roleName}/bookings`,
+                          name: 'Booking Management',
+                          icon: <TagOutlined />,
+                      },
                   ]
                   : []),
 

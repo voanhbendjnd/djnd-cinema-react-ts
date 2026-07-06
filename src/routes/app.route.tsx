@@ -26,6 +26,8 @@ import MovieListPage from "@/pages/user/movies/movie.list.page.tsx";
 import MovieDetail from "@/pages/user/home/movieDetails/MovieDetailPage.tsx";
 import PromotionManagement from "@/pages/admin/promotion/promotion.management.tsx";
 import POSBookingPage from "@/pages/admin/booking/pos.booking.tsx";
+import BookingManagement from "@/pages/admin/booking/booking.management.tsx";
+import BookingDetail from "@/pages/admin/booking/booking.detail.tsx";
 
 const AppRoutes: React.FC = () => {
     const { isAuthenticated, role } = useAuthStore();
@@ -75,6 +77,9 @@ const AppRoutes: React.FC = () => {
                     <Route path="/admin/movies/:id" element={<MovieDetailPage />} />
                     <Route path="/admin/rooms/:id" element={<RoomDetailPage />} />
 
+                    <Route path="/admin/bookings" element={<BookingManagement />} />
+                    <Route path="/admin/bookings/:id" element={<BookingDetail />} />
+
                 </Route>
             </Route>
             <Route element={<ProtectedRoute requiredRole="ROLE_MANAGER" />}>
@@ -89,6 +94,9 @@ const AppRoutes: React.FC = () => {
 
                     <Route path="/manager/movies/:id" element={<MovieDetailPage />} />
                     <Route path="/manager/rooms/:id" element={<RoomDetailPage />} />
+                    <Route path="/manager/bookings" element={<BookingManagement />} />
+                    <Route path="/manager/bookings/:id" element={<BookingDetail />} />
+
 
                 </Route>
             </Route>
