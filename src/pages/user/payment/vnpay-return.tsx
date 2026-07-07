@@ -100,7 +100,7 @@ const VNPayReturnPage: React.FC = () => {
                                 type="primary" 
                                 size="large" 
                                 icon={<ArrowRightOutlined />} 
-                                onClick={() => navigate('/profile')}
+                                onClick={() => navigate('/tickets')}
                                 style={{ 
                                     background: success ? '#52c41a' : undefined,
                                     width: '100%',
@@ -112,7 +112,7 @@ const VNPayReturnPage: React.FC = () => {
                             <Button 
                                 size="large" 
                                 icon={<HomeOutlined />} 
-                                onClick={() => navigate('/')}
+                                onClick={() => navigate('/tickets')}
                                 style={{ width: '100%' }}
                             >
                                 Return to Home

@@ -28,6 +28,8 @@ import PromotionManagement from "@/pages/admin/promotion/promotion.management.ts
 import POSBookingPage from "@/pages/admin/booking/pos.booking.tsx";
 import BookingManagement from "@/pages/admin/booking/booking.management.tsx";
 import BookingDetail from "@/pages/admin/booking/booking.detail.tsx";
+import TicketListPage from "@/pages/user/tickets/ticket.list.page.tsx";
+import TicketDetailPage from "@/pages/user/tickets/ticket.detail.page.tsx";
 
 const AppRoutes: React.FC = () => {
     const { isAuthenticated, role } = useAuthStore();
@@ -54,7 +56,7 @@ const AppRoutes: React.FC = () => {
                 />
                 <Route
                     path="/account/reset/finish"
-                    element={<ResetPasswordFinish/>}
+                    element={<ResetPasswordFinish />}
                 />
             </Route>
 
@@ -126,7 +128,9 @@ const AppRoutes: React.FC = () => {
 
             <Route element={<ProtectedRoute requiredRole="ROLE_CUSTOMER" />}>
                 <Route element={<HomeLayout />} >
-                    <Route path="/profile" element={<AccountInfoPage/>}/>
+                    <Route path="/profile" element={<AccountInfoPage />} />
+                    <Route path="/tickets" element={<TicketListPage />} />
+                    <Route path="/tickets/:id" element={<TicketDetailPage />} />
                 </Route>
             </Route>
 

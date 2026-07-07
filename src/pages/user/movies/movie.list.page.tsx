@@ -1,3 +1,4 @@
+// [2026-07-07 07:14] Thêm prop statusFilter để hỗ trợ Now Showing / Coming Soon
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button, Input, Select, Spin, Empty, Pagination } from 'antd';
 import { CalendarOutlined, EyeOutlined, SearchOutlined, ArrowLeftOutlined } from '@ant-design/icons';
@@ -56,11 +57,8 @@ const ListMovieCard: React.FC<{ movie: PublishMovieProjection }> = ({ movie }) =
     const navigate = useNavigate();
     const src = getMoviePosterSrc(movie.posterUrl);
 
-    // const goToDetail = () => {
-    //     navigate(`/movies/${generateMovieSlug(movie.title, movie.id)}`);
-    // };
     const goToDetail = () => {
-        navigate(generateMovieSlug(movie.title, movie.id));
+        navigate(`/movies/${generateMovieSlug(movie.title, movie.id)}`);
     };
 
     return (
@@ -95,7 +93,13 @@ const ListMovieCard: React.FC<{ movie: PublishMovieProjection }> = ({ movie }) =
     );
 };
 
-const MovieListPage: React.FC = () => {
+// [2026-07-07 07:14] Thêm prop statusFilter: 'SHOWING' | 'UPCOMING' | undefined
+// Khi statusFilter được truyền vào, danh sách phim sẽ được lọc theo status tương ứng
+interface MovieListPageProps {
+    statusFilter?: 'SHOWING' | 'UPCOMING';
+}
+
+const MovieListPage: React.FC<MovieListPageProps> = ({ statusFilter }) => {
     const [movies, setMovies] = useState<PublishMovieProjection[]>([]);
     const [loading, setLoading] = useState(true);
     const [genre, setGenre] = useState('ALL');
@@ -104,21 +108,25 @@ const MovieListPage: React.FC = () => {
     const [page, setPage] = useState(1);
 
     // [2026-06-27] Gọi API home movies có sẵn
+    // [2026-07-07] Truyền status query param để lọc đúng SHOWING / UPCOMING từ backend
     useEffect(() => {
+        const params = statusFilter ? `?status=${statusFilter}` : '';
         axiosClient
-            .get<unknown>('/api/v1/home/movies')
+            .get<unknown>(`/api/v1/home/movies${params}`)
             .then((res) => {
                 const data = (res as { data?: unknown })?.data ?? res;
                 setMovies(Array.isArray(data) ? data : (data as { result?: PublishMovieProjection[] })?.result ?? []);
             })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, []);
+    }, [statusFilter]);
 
     // [2026-06-27] Lọc thể loại, tìm kiếm tên, sắp xếp
+    // [2026-07-07 07:14] Bổ sung lọc theo statusFilter (SHOWING / UPCOMING)
     const filteredMovies = useMemo(() => {
         const keyword = search.trim().toLowerCase();
         let result = movies.filter((m) => {
+            if (statusFilter && m.status !== statusFilter) return false;
             if (genre !== 'ALL' && m.genre !== genre) return false;
             if (keyword && !m.title.toLowerCase().includes(keyword)) return false;
             return true;
@@ -139,7 +147,8 @@ const MovieListPage: React.FC = () => {
         });
 
         return result;
-    }, [movies, genre, search, sort]);
+        // [2026-07-07 07:14] Thêm statusFilter vào deps để re-filter khi chuyển tab
+    }, [movies, genre, search, sort, statusFilter]);
 
     // [2026-06-27] Phân trang client-side (API home/movies chưa có pagination)
     const paginatedMovies = useMemo(() => {
@@ -156,22 +165,32 @@ const MovieListPage: React.FC = () => {
         if (page > maxPage) setPage(maxPage);
     }, [filteredMovies.length, page]);
 
+    // [2026-07-07 07:14] Xác định tiêu đề và link back tương ứng với statusFilter
+    const pageTitle = statusFilter === 'SHOWING'
+        ? 'NOW SHOWING'
+        : statusFilter === 'UPCOMING'
+            ? 'COMING SOON'
+            : 'MOVIE LIST';
+
+    const backLabel = statusFilter ? 'Back to Movies' : 'Back to Home';
+    const backPath = statusFilter ? '/movies' : '/';
+
     return (
         <div className="home movie-list-page">
             <section className="section">
-                <Link to="/" className="movie-list-back">
+                <Link to={backPath} className="movie-list-back">
                     <Button
                         type="default"
                         icon={<ArrowLeftOutlined />}
                         className="movie-list-back__btn"
                     >
-                        Back to Home
+                        {backLabel}
                     </Button>
                 </Link>
 
                 <div className="section__heading">
                     <div className="section__line" />
-                    <h2 className="section__title">MOVIE LIST</h2>
+                    <h2 className="section__title">{pageTitle}</h2>
                     <div className="section__line" />
                 </div>
 

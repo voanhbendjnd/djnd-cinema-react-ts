@@ -883,7 +883,7 @@ export const POSBookingPage: React.FC = () => {
                                         <DollarOutlined /> Cash/POS Counter
                                     </Radio.Button>
                                     <Radio.Button value="VNPAY" style={{ flex: 1, textAlign: 'center', background: 'transparent', borderColor: 'rgba(255,255,255,0.12)' }}>
-                                        VNPay QR
+                                        VNPay
                                     </Radio.Button>
                                 </Radio.Group>
                             </div>

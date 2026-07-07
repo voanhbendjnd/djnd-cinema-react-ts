@@ -605,3 +605,163 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ─── [2026-07-07 07:14] Movies dropdown menu ────────────────────────────
+   Dropdown xuất hiện khi click vào nút MOVIES trên header navigation.
+   Chứa 3 mục: Now Showing, Coming Soon, All Movies.
+──────────────────────────────────────────────────────────────────────── */
+
+/* Wrapper container giữ nút trigger + dropdown panel */
+.header__nav-movies {
+    position: relative;
+}
+
+/* Nút trigger MOVIES — kế thừa style header__nav-link nhưng là button */
+.header__nav-movies-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+}
+
+/* Mũi tên nhỏ bên cạnh chữ MOVIES */
+.header__nav-movies-arrow {
+    font-size: 9px;
+    opacity: 0.6;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+.header__nav-movies--open .header__nav-movies-arrow {
+    transform: rotate(180deg);
+    opacity: 1;
+}
+
+/* Panel dropdown */
+.header__nav-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 220px;
+    background: #0f0f0f;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(230, 57, 70, 0.15);
+    overflow: hidden;
+    z-index: 200;
+    animation: dropdownFadeIn 0.18s ease both;
+}
+
+/* Đường kẻ trên cùng dropdown với màu đỏ accent */
+.header__nav-dropdown::before {
+    content: '';
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--home-red), transparent);
+}
+
+/* Animation xuất hiện dropdown */
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Mỗi item trong dropdown */
+.header__nav-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: var(--home-muted);
+    transition: background 0.18s, color 0.18s;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+}
+.header__nav-dropdown-item:last-child {
+    border-bottom: none;
+}
+.header__nav-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--home-text);
+}
+
+/* Icon emoji trong mỗi item */
+.dropdown-item__icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+/* Cụm text: label + sub */
+.dropdown-item__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Tên mục (NOW SHOWING, COMING SOON, ALL MOVIES) */
+.dropdown-item__label {
+    font-family: var(--home-font-ui);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+}
+
+/* Mô tả nhỏ phía dưới label */
+.dropdown-item__sub {
+    font-size: 10px;
+    color: var(--home-muted);
+    letter-spacing: 0.5px;
+}
+
+/* Now Showing — màu đỏ khi hover */
+.header__nav-dropdown-item--showing:hover .dropdown-item__label {
+    color: var(--home-red);
+}
+.header__nav-dropdown-item--showing:hover {
+    background: rgba(230, 57, 70, 0.08);
+}
+
+/* Coming Soon — màu vàng gold khi hover */
+.header__nav-dropdown-item--upcoming:hover .dropdown-item__label {
+    color: var(--home-gold);
+}
+.header__nav-dropdown-item--upcoming:hover {
+    background: rgba(255, 215, 0, 0.06);
+}
+
+/* All Movies — màu trắng khi hover */
+.header__nav-dropdown-item--all:hover .dropdown-item__label {
+    color: #fff;
+}
+.header__nav-dropdown-item--all:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Responsive: ẩn dropdown trên mobile (menu đã ẩn) */
+@media (max-width: 900px) {
+    .header__nav-dropdown {
+        left: 0;
+        transform: none;
+    }
+    @keyframes dropdownFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
