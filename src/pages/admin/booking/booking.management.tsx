@@ -234,7 +234,7 @@ const BookingListPage: React.FC = () => {
         <div
             style={{
                 minHeight: '100vh',
-                background: 'linear-gradient(135deg, #1a0000 0%, #3d0000 100%)',
+                background: '#0f0f0f',
                 padding: '40px 20px',
             }}
         >

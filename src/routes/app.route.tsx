@@ -30,6 +30,7 @@ import BookingManagement from "@/pages/admin/booking/booking.management.tsx";
 import BookingDetail from "@/pages/admin/booking/booking.detail.tsx";
 import TicketListPage from "@/pages/user/tickets/ticket.list.page.tsx";
 import TicketDetailPage from "@/pages/user/tickets/ticket.detail.page.tsx";
+import VoucherListPage from "@/pages/user/promotion/page.tsx";
 
 const AppRoutes: React.FC = () => {
     const { isAuthenticated, role } = useAuthStore();
@@ -117,8 +118,8 @@ const AppRoutes: React.FC = () => {
                 <Route path="/payment-result" element={<VNPayReturnPage />} />
 
                 <Route path="/" element={<HomePage />} />
-                {/* [2026-06-27] Route trang danh sách phim — nút Movie / MOVIES */}
                 <Route path="/movies" element={<MovieListPage />} />
+                <Route path="/vouchers" element={<VoucherListPage/>}/>
                 <Route
                     path="/movies/:slug"
                     element={<MovieDetail />}

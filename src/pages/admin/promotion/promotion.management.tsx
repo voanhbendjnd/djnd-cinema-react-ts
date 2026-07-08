@@ -29,6 +29,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { promotionService } from '@/services/promotion.service';
+import type {IPromotion} from "@/types/promotion.types.ts";
 
 /* ─────────────────────────────────────────────────────────────────
    STATUS BADGE HELPER
@@ -572,8 +573,8 @@ const PromotionManagement: React.FC = () => {
                     try {
                         const res = await promotionService.getPromotions(pagination.page, pagination.size, debouncedQuery);
                         if (res?.data) {
-                            setPagination((p) => ({ ...p, totalElements: res.data.meta.total }));
-                            return { data: res.data.result, success: true, total: res.data.meta.total };
+                            setPagination((p) => ({ ...p, totalElements:(res as unknown as IBackendRes<IModelPaginate<IPromotion>>).data.meta.total }));
+                            return { data: (res as unknown as IBackendRes<IModelPaginate<IPromotion>>).data.result, success: true, total:(res as unknown as IBackendRes<IModelPaginate<IPromotion>>).data.meta.total };
                         }
                     } catch (error: unknown) {
                         api.error({

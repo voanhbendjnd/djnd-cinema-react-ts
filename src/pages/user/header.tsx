@@ -16,9 +16,9 @@ const QUICK_LINKS = [
   },
   {
     icon: newsOffers,
-    label: 'News',
-    sub: 'News and offers',
-    path:'/'
+    label: 'Vouchers',
+    sub: 'Collect voucher apply for movie',
+    path:'/vouchers'
 
   },
   {
