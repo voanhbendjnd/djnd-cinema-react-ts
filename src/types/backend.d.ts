@@ -93,6 +93,9 @@ declare global{
         title: string;
         detail?: string;
         discountPercentage: number;
+        quantity?: number;        // số lượng voucher, >= 0
+        releaseDate?: string;     // ngày công khai voucher (hiện tại hoặc tương lai)
+        isActive?: boolean;       // voucher đang hoạt động hay tạm dừng
         startTime: string;   // ISO LocalDateTime string e.g. "2025-12-01T00:00:00"
         endTime: string;
         thumbnailUrl?: string;

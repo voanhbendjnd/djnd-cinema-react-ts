@@ -11,6 +11,7 @@ import {
     InputNumber,
     DatePicker,
     Tag,
+    Switch,
     Tooltip,
 } from 'antd';
 import {
@@ -23,7 +24,8 @@ import {
     RightOutlined,
     DoubleRightOutlined,
     TagOutlined,
-    PictureOutlined,
+    CheckCircleOutlined,
+    StopOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { promotionService } from '@/services/promotion.service';
@@ -79,6 +81,9 @@ const PromotionModal: React.FC<PromotionModalProps> = ({ isOpen, onClose, curren
                 title: currentPromotion.title,
                 detail: currentPromotion.detail,
                 discountPercentage: currentPromotion.discountPercentage,
+                quantity: currentPromotion.quantity ?? 0,
+                releaseDate: currentPromotion.releaseDate ? dayjs(currentPromotion.releaseDate) : null,
+                isActive: currentPromotion.isActive ?? false,
                 startTime: currentPromotion.startTime ? dayjs(currentPromotion.startTime) : null,
                 endTime: currentPromotion.endTime ? dayjs(currentPromotion.endTime) : null,
                 thumbnailUrl: currentPromotion.thumbnailUrl,
@@ -93,10 +98,14 @@ const PromotionModal: React.FC<PromotionModalProps> = ({ isOpen, onClose, curren
             const values = await form.validateFields();
             setLoading(true);
 
+            const isActiveValue = form.getFieldValue('isActive');
             const payload = {
                 title: values.title,
                 detail: values.detail,
                 discountPercentage: values.discountPercentage,
+                quantity: values.quantity,
+                releaseDate: (values.releaseDate as dayjs.Dayjs).format('YYYY-MM-DDTHH:mm:ss'),
+                isActive: isActiveValue === true,
                 startTime: (values.startTime as dayjs.Dayjs).format('YYYY-MM-DDTHH:mm:ss'),
                 endTime: (values.endTime as dayjs.Dayjs).format('YYYY-MM-DDTHH:mm:ss'),
                 thumbnailUrl: values.thumbnailUrl,
@@ -185,12 +194,97 @@ const PromotionModal: React.FC<PromotionModalProps> = ({ isOpen, onClose, curren
                         />
                     </Form.Item>
 
+                    {/* Quantity & Release Date */}
+                    <div style={{ display: 'flex', gap: 16 }}>
+                        <Form.Item
+                            label={<span style={{ color: 'rgba(255,255,255,0.85)' }}>Quantity</span>}
+                            name="quantity"
+                            style={{ flex: 1 }}
+                            initialValue={0}
+                            rules={[
+                                { required: true, message: 'Please enter quantity' },
+                                {
+                                    validator: (_, value) => {
+                                        if (value === undefined || value === null || value === '') return Promise.resolve();
+                                        if (Number(value) < 0) {
+                                            return Promise.reject(new Error('Quantity must be >= 0'));
+                                        }
+                                        return Promise.resolve();
+                                    },
+                                },
+                            ]}
+                        >
+                            <InputNumber
+                                min={0}
+                                precision={0}
+                                style={{ width: '100%' }}
+                                placeholder="e.g. 100"
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            label={<span style={{ color: 'rgba(255,255,255,0.85)' }}>Release Date</span>}
+                            name="releaseDate"
+                            style={{ flex: 1 }}
+                            rules={[
+                                { required: true, message: 'Please select release date' },
+                                {
+                                    validator: (_, value) => {
+                                        if (!value) return Promise.resolve();
+                                        if ((value as dayjs.Dayjs).isBefore(dayjs().startOf('day'))) {
+                                            return Promise.reject(new Error('Release date must be today or in the future'));
+                                        }
+                                        return Promise.resolve();
+                                    },
+                                },
+                            ]}
+                        >
+                            <DatePicker
+                                showTime
+                                style={{ width: '100%' }}
+                                format="DD/MM/YYYY HH:mm"
+                                disabledDate={(current) => current && current < dayjs().startOf('day')}
+                                placeholder="Pick release date"
+                            />
+                        </Form.Item>
+                    </div>
+
+                    {/* Active Toggle */}
+                    <Form.Item
+                        label={<span style={{ color: 'rgba(255,255,255,0.85)' }}>Status</span>}
+                        name="isActive"
+                        valuePropName="checked"
+                        initialValue={false}
+                    >
+                        <Switch
+                            checkedChildren={<><CheckCircleOutlined /> Active</>}
+                            unCheckedChildren={<><StopOutlined /> Inactive</>}
+                            style={{ minWidth: 110 }}
+                        />
+                    </Form.Item>
+
+                    {/* Start / End Time */}
                     <div style={{ display: 'flex', gap: 16 }}>
                         <Form.Item
                             label={<span style={{ color: 'rgba(255,255,255,0.85)' }}>Start Time</span>}
                             name="startTime"
                             style={{ flex: 1 }}
-                            rules={[{ required: true, message: 'Please select start time' }]}
+                            dependencies={['releaseDate']}
+                            rules={[
+                                { required: true, message: 'Please select start time' },
+                                ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                        const rd = getFieldValue('releaseDate') as dayjs.Dayjs | null;
+                                        if (!value || !rd) return Promise.resolve();
+                                        if ((value as dayjs.Dayjs).isBefore(rd)) {
+                                            return Promise.reject(
+                                                new Error('Start time must be on or after release date')
+                                            );
+                                        }
+                                        return Promise.resolve();
+                                    },
+                                }),
+                            ]}
                         >
                             <DatePicker 
                                 showTime 
@@ -220,8 +314,6 @@ const PromotionModal: React.FC<PromotionModalProps> = ({ isOpen, onClose, curren
                             <DatePicker showTime style={{ width: '100%' }} format="DD/MM/YYYY HH:mm" />
                         </Form.Item>
                     </div>
-
-
                 </Form>
             </Modal>
         </>
@@ -327,6 +419,49 @@ const PromotionManagement: React.FC = () => {
                 <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13 }}>
                     {formatDate(record.endTime)}
                 </span>
+            ),
+        },
+        {
+            title: 'Quantity',
+            dataIndex: 'quantity',
+            width: 100,
+            search: false,
+            render: (_, record) => (
+                <span style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
+                    {record.quantity ?? '-'}
+                </span>
+            ),
+        },
+        {
+            title: 'Release Date',
+            dataIndex: 'releaseDate',
+            width: 150,
+            search: false,
+            render: (_, record) => (
+                <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13 }}>
+                    {record.releaseDate ? formatDate(record.releaseDate) : '-'}
+                </span>
+            ),
+        },
+        {
+            title: 'Active',
+            dataIndex: 'isActive',
+            width: 90,
+            search: false,
+            render: (_, record) => (
+                <Tooltip title={record.isActive ? 'Active' : 'Inactive'}>
+                    <Tag
+                        icon={record.isActive ? <CheckCircleOutlined /> : <StopOutlined />}
+                        style={{
+                            color:      record.isActive ? '#52c41a' : 'rgba(255,255,255,0.45)',
+                            background: record.isActive ? 'rgba(82,196,26,0.12)' : 'rgba(255,255,255,0.06)',
+                            borderColor: record.isActive ? '#52c41a' : 'rgba(255,255,255,0.2)',
+                            fontWeight: 600,
+                        }}
+                    >
+                        {record.isActive ? 'Active' : 'Inactive'}
+                    </Tag>
+                </Tooltip>
             ),
         },
         {
