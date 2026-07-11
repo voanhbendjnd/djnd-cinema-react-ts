@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
+    ConfigProvider,
     Modal,
     Button,
     Spin,
@@ -12,11 +13,12 @@ import {
     Tooltip,
     Alert,
 } from 'antd';
+import enUS from 'antd/locale/en_US';
 import {
     LeftOutlined,
     RightOutlined,
     ClockCircleOutlined,
-    LoginOutlined,
+    LoginOutlined
 } from '@ant-design/icons';
 import 'dayjs/locale/en';
 import axiosClient, { baseURL } from '@/services/axiosClient';
@@ -24,7 +26,13 @@ import { Client } from '@stomp/stompjs';
 import dayjs, { Dayjs } from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from "@/store/useAuthStore.ts";
-
+import VoucherSelector, {type VoucherCursorResult, type VoucherItem} from './voucher.selector';
+// ✅ Hardcode tên thứ/tháng tiếng Anh, không phụ thuộc dayjs locale
+// (tránh bị locale global của app đổi thành ngôn ngữ khác, vd 周日)
+const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 // ─────────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────────
@@ -51,6 +59,7 @@ interface ResSeatAtRoomBookingDTO {
     totalSeats: number;
     totalSoldSeats: number;
 }
+
 
 // ─────────────────────────────────────────────────────────────
 // SEAT TYPE COLORS (Enhanced)
@@ -457,6 +466,50 @@ export const BookingModal: React.FC<{
     const [booking, setBooking] = useState(false);
     const dateScrollRef = useRef<HTMLDivElement>(null);
 
+    // ─── VOUCHER STATE ───
+    const [vouchers, setVouchers] = useState<VoucherItem[]>([]);
+    const [voucherLoading, setVoucherLoading] = useState(false);
+    const [voucherHasMore, setVoucherHasMore] = useState(false);
+    const [selectedVoucher, setSelectedVoucher] = useState<VoucherItem | null>(null);
+
+    const voucherCursorRef = useRef<string | null>(null);
+    const voucherCursorIdRef = useRef<number | null>(null);
+
+    const fetchVouchers = useCallback(async (reset = false) => {
+        if (!isAuthenticated) return;
+        setVoucherLoading(true);
+        try {
+            const body: any = { size: 5 };
+            if (!reset && voucherCursorRef.current) {
+                body.cursor = voucherCursorRef.current;
+                body.voucherId = voucherCursorIdRef.current;
+            }
+            const res = await axiosClient.post<VoucherCursorResult>(
+                '/api/promotions/customer/claimed',
+                body
+            );
+            const data: VoucherCursorResult = (res as any)?.data ?? res;
+            const items: VoucherItem[] = Array.isArray(data?.result) ? data.result : [];
+            setVouchers(prev => (reset ? items : [...prev, ...items]));
+            setVoucherHasMore(data?.hasMore ?? false);
+            voucherCursorRef.current = data?.nextCursor ?? null;
+            voucherCursorIdRef.current = data?.voucherId ?? null;
+        } catch (err) {
+            console.error('[fetchVouchers] failed:', err);
+            api.error({ message: 'Failed to load vouchers', placement: 'topRight' });
+        } finally {
+            setVoucherLoading(false);
+        }
+    }, [isAuthenticated, api]);
+
+    useEffect(() => {
+        if (step === 'seat' && isAuthenticated) {
+            voucherCursorRef.current = null;
+            voucherCursorIdRef.current = null;
+            fetchVouchers(true);
+        }
+    }, [step, isAuthenticated, fetchVouchers]);
+
     // ─────────────────────────────────────────────────────────
     // RESET WHEN MODAL OPENS
     // ─────────────────────────────────────────────────────────
@@ -468,6 +521,11 @@ export const BookingModal: React.FC<{
         setSelectedShowtime(null);
         setSeatData(null);
         setSelectedSeats([]);
+        setVouchers([]);
+        setSelectedVoucher(null);
+        voucherCursorRef.current = null;
+        voucherCursorIdRef.current = null;
+        setVoucherHasMore(false);
     }, [movieId]);
 
     // ─────────────────────────────────────────────────────────
@@ -599,12 +657,24 @@ export const BookingModal: React.FC<{
         }
     };
 
-    const getTotalPrice = (): number => {
+    const getOriginalPrice = (): number => {
         if (!seatData) return 0;
         return selectedSeats.reduce((sum, seatId) => {
             const seat = seatData.seats.find((s) => s.id === seatId);
             return sum + (seat?.price ?? 0);
         }, 0);
+    };
+
+    const getTotalPrice = (): number => {
+        const original = getOriginalPrice();
+        if (!selectedVoucher) return original;
+        const discount = selectedVoucher.discountPercentage / 100;
+        return Math.round(original * (1 - discount));
+    };
+
+    const getDiscountAmount = (): number => {
+        if (!selectedVoucher) return 0;
+        return getOriginalPrice() - getTotalPrice();
     };
 
     const handleConfirmBooking = async () => {
@@ -616,6 +686,7 @@ export const BookingModal: React.FC<{
                 showtimeId: selectedShowtime.showtimeId,
                 seatIds: selectedSeats,
                 paymentMethod: 'VNPAY',
+                ...(selectedVoucher ? { voucherId: selectedVoucher.id } : {}),
             });
 
             const data = res?.data?.data ?? res.data;
@@ -659,8 +730,9 @@ export const BookingModal: React.FC<{
     };
     const [validationError, setValidationError] = useState<string | null>(null);
 
+    // @ts-ignore
     return (
-        <>
+        <ConfigProvider locale={enUS}>
             {contextHolder}
             <Modal
                 open={movieId != null}
@@ -747,7 +819,7 @@ export const BookingModal: React.FC<{
                                                 }}
                                             >
                                                 <div style={{ fontSize: 10, letterSpacing: 1, opacity: 0.85 }}>
-                                                    {d.format('ddd').toUpperCase()}
+                                                    {WEEKDAY_SHORT[d.day()].toUpperCase()}
                                                 </div>
                                                 <div
                                                     style={{
@@ -759,7 +831,7 @@ export const BookingModal: React.FC<{
                                                     {d.format('DD')}
                                                 </div>
                                                 <div style={{ fontSize: 9, opacity: 0.7 }}>
-                                                    {isToday ? 'TODAY' : d.format('MMM')}
+                                                    {isToday ? 'TODAY' : MONTH_SHORT[d.month()]}
                                                 </div>
                                             </button>
                                         );
@@ -893,7 +965,7 @@ export const BookingModal: React.FC<{
                         >
                             <div>
                                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
-                                    {selectedDate.format('dddd, MMMM DD, YYYY')}
+                                    {`${WEEKDAY_LONG[selectedDate.day()]}, ${MONTH_LONG[selectedDate.month()]} ${selectedDate.format('DD, YYYY')}`}
                                 </div>
                                 <div style={{ fontSize: 14, fontWeight: 600, color: '#f0ece3' }}>
                                     <ClockCircleOutlined style={{ marginRight: 6 }} />
@@ -1013,7 +1085,40 @@ export const BookingModal: React.FC<{
 
                             <Divider style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '12px 0' }} />
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            {/* VOUCHER SECTION */}
+                            <VoucherSelector
+                                vouchers={vouchers}
+                                selectedVoucher={selectedVoucher}
+                                voucherLoading={voucherLoading}
+                                voucherHasMore={voucherHasMore}
+                                onSelectVoucher={setSelectedVoucher}
+                                onLoadMore={() => fetchVouchers(false)}
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                //@ts-expect-error
+                                onOpenPanel={() => {
+                                    if (vouchers.length === 0 && !voucherLoading) {
+                                        voucherCursorRef.current = null;
+                                        voucherCursorIdRef.current = null;
+                                        fetchVouchers(true);
+                                    }
+                                }}
+                            />
+
+                            <Divider style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '12px 0' }} />
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                                <span>Original Price:</span>
+                                <span>{getOriginalPrice().toLocaleString('vi-VN')}đ</span>
+                            </div>
+                            
+                            {selectedVoucher && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12, color: '#ec4899', fontWeight: 600 }}>
+                                    <span>Discount (-{selectedVoucher.discountPercentage}%):</span>
+                                    <span>-{getDiscountAmount().toLocaleString('vi-VN')}đ</span>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
                                 <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
                                     TOTAL AMOUNT
                                 </span>
@@ -1052,7 +1157,7 @@ export const BookingModal: React.FC<{
                     </>
                 )}
             </Modal>
-        </>
+        </ConfigProvider>
     );
 };
 

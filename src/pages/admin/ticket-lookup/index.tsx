@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { 
     type ActionType, 
     type ProColumns, 
@@ -231,8 +231,8 @@ const TicketLookup: React.FC = () => {
         const fetchMoviesToday = async () => {
             try {
                 const res = await bookingService.getMoviesToday();
-                // Lấy mảng dữ liệu phim từ kết quả trả về của Backend
-                // (Tùy theo cấu trúc API backend, thường là res.data.result hoặc res.data)
+                // Láº¥y máº£ng dá»¯ liá»‡u phim tá»« káº¿t quáº£ tráº£ vá» cá»§a Backend
+                // (TÃ¹y theo cáº¥u trÃºc API backend, thÆ°á»ng lÃ  res.data.result hoáº·c res.data)
                 if (res && res.data && res.data.result) {
                     setMoviesToday(res.data.result);
                 } else if (res && res.data) {
@@ -494,14 +494,14 @@ const TicketLookup: React.FC = () => {
 
            {/* Print Only Thermal Stylesheet & Section */}
             <style dangerouslySetInnerHTML={{ __html: `
-                /* 🟢 1. GIẤU CHIẾC VÉ ĐI KHI XEM TRÊN MÀN HÌNH WEB */
+                /* ðŸŸ¢ 1. GIáº¤U CHIáº¾C VÃ‰ ÄI KHI XEM TRÃŠN MÃ€N HÃŒNH WEB */
                 @media screen {
                     #print-receipt-section {
                         display: none !important;
                     }
                 }
 
-                /* 🟢 2. HIỆN CHIẾC VÉ LÊN KHI MÁY IN CHẠY */
+                /* ðŸŸ¢ 2. HIá»†N CHIáº¾C VÃ‰ LÃŠN KHI MÃY IN CHáº Y */
                 @media print {
                     @page {
                         size: auto;
@@ -518,9 +518,9 @@ const TicketLookup: React.FC = () => {
                         visibility: visible;
                     }
                     
-                    /* Căn chỉnh lại form vé */
+                    /* CÄƒn chá»‰nh láº¡i form vÃ© */
                     #print-receipt-section {
-                        display: block !important; /* Ép hiện lại khi in */
+                        display: block !important; /* Ã‰p hiá»‡n láº¡i khi in */
                         position: absolute;
                         left: 0;
                         top: 0;
@@ -537,13 +537,13 @@ const TicketLookup: React.FC = () => {
                         display: none !important;
                     }
                     
-                    /* Ẩn thông báo popup Ant Design */
+                    /* áº¨n thÃ´ng bÃ¡o popup Ant Design */
                     .ant-notification, .ant-message {
                         display: none !important;
                         visibility: hidden !important;
                     }
 
-                    /* Ẩn Menu Sidebar và Header */
+                    /* áº¨n Menu Sidebar vÃ  Header */
                     .ant-layout-sider,
                     .ant-layout-header,
                     .ant-menu,
@@ -1141,3 +1141,4 @@ const TicketLookup: React.FC = () => {
 };
 
 export default TicketLookup;
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { type ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
 import { Button, Input, Popconfirm, notification, Select } from 'antd';
 import {
@@ -340,7 +340,7 @@ const RoleManagement: React.FC = () => {
 
                 {/* Navigation Buttons */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {/* Trang đầu */}
+                    {/* Trang Ä‘áº§u */}
                     <Button
                         icon={<DoubleLeftOutlined />}
                         disabled={pagination.page === 1}
@@ -352,7 +352,7 @@ const RoleManagement: React.FC = () => {
                         }}
                     />
 
-                    {/* Trang trước */}
+                    {/* Trang trÆ°á»›c */}
                     <Button
                         icon={<LeftOutlined />}
                         disabled={pagination.page === 1}
@@ -364,7 +364,7 @@ const RoleManagement: React.FC = () => {
                         }}
                     />
 
-                    {/* Danh sách các số trang */}
+                    {/* Danh sÃ¡ch cÃ¡c sá»‘ trang */}
                     {getPageNumbers().map((num) => (
                         <Button
                             key={num}
@@ -392,7 +392,7 @@ const RoleManagement: React.FC = () => {
                         }}
                     />
 
-                    {/* Trang cuối */}
+                    {/* Trang cuá»‘i */}
                     <Button
                         icon={<DoubleRightOutlined />}
                         disabled={pagination.page === totalPages}
@@ -431,3 +431,4 @@ const RoleManagement: React.FC = () => {
 };
 
 export default RoleManagement;
+

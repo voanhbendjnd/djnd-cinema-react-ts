@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { type ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
 import {
     Button,
@@ -31,9 +31,9 @@ import dayjs from 'dayjs';
 import { promotionService } from '@/services/promotion.service';
 import type {IPromotion} from "@/types/promotion.types.ts";
 
-/* ─────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    STATUS BADGE HELPER
-───────────────────────────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const StatusBadge: React.FC<{ status?: string }> = ({ status }) => {
     const config: Record<string, { color: string; bg: string; label: string }> = {
         Active:   { color: '#52c41a', bg: 'rgba(82,196,26,0.12)',   label: 'Active' },
@@ -48,9 +48,9 @@ const StatusBadge: React.FC<{ status?: string }> = ({ status }) => {
     );
 };
 
-/* ─────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    DATE FORMATTER
-───────────────────────────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
     try {
@@ -60,9 +60,9 @@ const formatDate = (dateString?: string) => {
     }
 };
 
-/* ─────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    PROMOTION MODAL (Create / Edit)
-───────────────────────────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 interface PromotionModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -321,9 +321,9 @@ const PromotionModal: React.FC<PromotionModalProps> = ({ isOpen, onClose, curren
     );
 };
 
-/* ─────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    MAIN PAGE COMPONENT
-───────────────────────────────────────────────────────────────── */
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const PromotionManagement: React.FC = () => {
     const actionRef = useRef<ActionType>(null);
 
@@ -349,7 +349,7 @@ const PromotionManagement: React.FC = () => {
         actionRef.current?.reload();
     }, [pagination.page, pagination.size, debouncedQuery]);
 
-    /* ── Delete ── */
+    /* â”€â”€ Delete â”€â”€ */
     const handleDelete = async (record: IPromotion) => {
         if (record.endTime && new Date(record.endTime) < new Date()) {
             api.warning({
@@ -374,7 +374,7 @@ const PromotionManagement: React.FC = () => {
         }
     };
 
-    /* ── Columns ── */
+    /* â”€â”€ Columns â”€â”€ */
     const columns: ProColumns<IPromotion>[] = [
         {
             title: 'ID',
@@ -513,7 +513,7 @@ const PromotionManagement: React.FC = () => {
         },
     ];
 
-    /* ── Pagination helpers ── */
+    /* â”€â”€ Pagination helpers â”€â”€ */
     const totalPages = Math.max(1, Math.ceil(pagination.totalElements / pagination.size));
     const getPageNumbers = () => {
         const pages: number[] = [];
@@ -525,7 +525,7 @@ const PromotionManagement: React.FC = () => {
         return pages;
     };
 
-    /* ─── RENDER ─── */
+    /* â”€â”€â”€ RENDER â”€â”€â”€ */
     return (
         <div style={{ padding: '24px', background: '#050505', minHeight: '100%' }}>
             {contextHolder}
@@ -587,7 +587,7 @@ const PromotionManagement: React.FC = () => {
                 }}
             />
 
-            {/* ── Custom Pagination ── */}
+            {/* â”€â”€ Custom Pagination â”€â”€ */}
             <div style={{
                 padding: '16px',
                 background: 'rgba(20,20,20,0.85)',
@@ -649,7 +649,7 @@ const PromotionManagement: React.FC = () => {
                 </div>
             </div>
 
-            {/* ── Create / Edit Modal ── */}
+            {/* â”€â”€ Create / Edit Modal â”€â”€ */}
             <PromotionModal
                 isOpen={isModalOpen}
                 onClose={() => { setIsModalOpen(false); setSelectedPromotion(null); }}
@@ -661,3 +661,4 @@ const PromotionManagement: React.FC = () => {
 };
 
 export default PromotionManagement;
+

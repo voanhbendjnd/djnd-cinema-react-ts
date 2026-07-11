@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState} from 'react';
+﻿import React, { useMemo, useRef, useState} from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Popconfirm, Result, Tag, Typography, notification } from 'antd';
@@ -64,7 +64,7 @@ const PermissionManagement: React.FC = () => {
   const navigate = useNavigate();
   const [api, contextHolder] = notification.useNotification();
 
-  // ✅ Cache tất cả permissions để tránh refetch liên tục
+  // âœ… Cache táº¥t cáº£ permissions Ä‘á»ƒ trÃ¡nh refetch liÃªn tá»¥c
   const [allPermissions, setAllPermissions] = useState<PermissionDTO[]>([]);
   const [filters, setFilters] = useState<PermissionFilters>({});
   const [pageable, setPageable] = useState<PermissionPageable>({
@@ -112,7 +112,7 @@ const PermissionManagement: React.FC = () => {
     try {
       await Promise.all(ids.map((id) => permissionService.deletePermission(id)));
 
-      // ✅ Update cả allPermissions và filtered permissions
+      // âœ… Update cáº£ allPermissions vÃ  filtered permissions
       const updatedAll = allPermissions.filter((permission) => !permission.id || !ids.includes(permission.id));
       setAllPermissions(updatedAll);
 
@@ -144,7 +144,7 @@ const PermissionManagement: React.FC = () => {
     }
   };
 
-  // ✅ Sửa: Tính toán filtered permissions từ allPermissions
+  // âœ… Sá»­a: TÃ­nh toÃ¡n filtered permissions tá»« allPermissions
   const filteredPermissions = useMemo(() => {
     return filterPermissions(allPermissions, filters);
   }, [allPermissions, filters]);
@@ -253,7 +253,7 @@ const PermissionManagement: React.FC = () => {
             actionRef={actionRef}
             cardBordered
             rowKey="id"
-            search={{
+            search={{ searchText: 'Search', resetText: 'Reset', submitText: 'Submit',
               layout: 'vertical',
               defaultCollapsed: false,
               labelWidth: 'auto',
@@ -272,14 +272,14 @@ const PermissionManagement: React.FC = () => {
               setFilters(nextFilters);
 
               try {
-                // ✅ Fetch tất cả data nếu chưa có hoặc cần refetch
+                // âœ… Fetch táº¥t cáº£ data náº¿u chÆ°a cÃ³ hoáº·c cáº§n refetch
                 let data = allPermissions;
 
                 if (allPermissions.length === 0) {
-                  // Fetch lần đầu - lấy tất cả permissions (không giới hạn)
+                  // Fetch láº§n Ä‘áº§u - láº¥y táº¥t cáº£ permissions (khÃ´ng giá»›i háº¡n)
                   const res = await permissionService.getPermissions({
                     current: 1,
-                    pageSize: 1000, // ✅ Fetch nhiều records hơn thay vì MAX_FILTER_FETCH_SIZE
+                    pageSize: 1000, // âœ… Fetch nhiá»u records hÆ¡n thay vÃ¬ MAX_FILTER_FETCH_SIZE
                   });
                   data = res.data.result || [];
 
@@ -291,10 +291,10 @@ const PermissionManagement: React.FC = () => {
                   setAllPermissions(allRows);
                 }
 
-                // ✅ Filter theo điều kiện
+                // âœ… Filter theo Ä‘iá»u kiá»‡n
                 const filteredRows = filterPermissions(data, nextFilters);
 
-                // ✅ Paginate đúng cách
+                // âœ… Paginate Ä‘Ãºng cÃ¡ch
                 const start = (current - 1) * pageSize;
                 const end = start + pageSize;
                 const pageRows = filteredRows.slice(start, end);

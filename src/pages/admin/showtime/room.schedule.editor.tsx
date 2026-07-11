@@ -1,22 +1,3 @@
-/**
- * RoomScheduleEditor — shared between MovieCreateModal and MovieUpdateModal.
- * Drop this file next to your modals and import from it.
- *
- * Changes vs previous version:
- *  1. `occupiedTimesMap` now stores `ShowtimeOccupied[]` per date so we can
- *     display the movie title and the blocked time range, not just "Occupied".
- *  2. `isOverlappingWithSelected` fixed: a slot is only blocked by an already-
- *     selected time when the two "films" would genuinely overlap.
- *     - Each screening occupies [start, start + duration + 15) minutes.
- *     - A candidate slot [S, S+duration+15) conflicts with a booked block
- *       [B, B+duration+15) iff S < B+duration+15 AND B < S+duration+15.
- *     - Previously the check was symmetric in the wrong way causing slots
- *       *before* an already-selected time to be flagged even though they
- *       finish before that time begins.
- *  3. Preset tags show the booked movie title in the tooltip when the slot
- *     falls inside an occupied range.
- */
-
 import React, { useEffect, useState } from 'react';
 import {
     Badge,
@@ -45,8 +26,7 @@ import type { RoomNameProjection, RoomScheduleDTO } from '@/types/movie.types';
 import { HOT_TIME_SLOTS } from '@/types/movie.types';
 
 const { Text } = Typography;
-
-// ─── helpers ─────────────────────────────────────────────────────────────────
+const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const fmtTime = (t: string) => t.slice(0, 5);
@@ -384,7 +364,7 @@ const RoomScheduleEditor: React.FC<RoomScheduleEditorProps> = ({
                                     }}
                                 >
                                     <Text strong style={{ fontSize: 13 }}>
-                                        📅 {dayjs(day.date).format('DD/MM/YYYY (ddd)')}
+                                        📅 {dayjs(day.date).format('DD/MM/YYYY')} ({WEEKDAY_SHORT[dayjs(day.date).day()]})
                                     </Text>
                                     <Button
                                         size="small"

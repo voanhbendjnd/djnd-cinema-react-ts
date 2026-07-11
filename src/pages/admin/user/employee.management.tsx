@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+﻿import React, {useRef, useState} from 'react';
 import {type ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
 import {Button, Modal, notification, Popconfirm} from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
@@ -124,7 +124,7 @@ const EmployeeManagement: React.FC = () => {
                 const res = await userService.getEmployees({
                   current: params.current,
                   pageSize: params.pageSize,
-                  q: params.login || params.name || params.email, // Lấy tạm theo keyword map
+                  q: params.login || params.name || params.email, // Láº¥y táº¡m theo keyword map
                 }) as unknown as IBackendRes<IModelPaginate<IAccount>>;
                 return {
                   data: res.data.result ,
@@ -163,7 +163,7 @@ const EmployeeManagement: React.FC = () => {
               },
             }}
             rowKey="id"
-            search={{
+            search={{ searchText: 'Search', resetText: 'Reset', submitText: 'Submit',
               labelWidth: 'auto',
             }}
             options={{
@@ -219,3 +219,4 @@ const EmployeeManagement: React.FC = () => {
 };
 
 export default EmployeeManagement;
+

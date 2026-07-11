@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+﻿import React, {useRef, useState} from 'react';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import {Button, message, notification, Popconfirm, Tag} from 'antd';
@@ -147,7 +147,7 @@ const RoomManagement: React.FC = () => {
                     }
                 }}
                 rowKey="id"
-                search={{
+                search={{ searchText: 'Search', resetText: 'Reset', submitText: 'Submit',
                     layout: 'vertical',
                     defaultCollapsed: false,
                 }}

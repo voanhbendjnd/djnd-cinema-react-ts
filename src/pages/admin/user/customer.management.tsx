@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+﻿import React, {useRef, useState} from 'react';
 import {type ActionType, type ProColumns, ProTable } from '@ant-design/pro-components';
 import {notification, Popconfirm, Space} from 'antd';
 import { userService } from '@/services/user.service.ts';
@@ -141,7 +141,7 @@ const CustomerManagement: React.FC = () => {
                         const res = await userService.getCustomers({
                             current: params.current,
                             pageSize: params.pageSize,
-                            q: params.login || params.name || params.email, // Lấy tạm theo keyword map
+                            q: params.login || params.name || params.email, // Láº¥y táº¡m theo keyword map
                         }) as unknown as IBackendRes<IModelPaginate<IAccount>>;
                         return {
                             data: res.data.result ,
@@ -180,7 +180,10 @@ const CustomerManagement: React.FC = () => {
                     },
                 }}
                 rowKey="id"
-                search={{
+                search={{ searchText: 'Search', resetText: 'Reset',
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    //@ts-expect-error
+                    submitText: 'Submit',
                     labelWidth: 'auto',
                 }}
                 options={{
@@ -216,3 +219,4 @@ const CustomerManagement: React.FC = () => {
 };
 
 export default CustomerManagement;
+

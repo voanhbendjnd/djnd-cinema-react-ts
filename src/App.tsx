@@ -1,6 +1,6 @@
 import { BrowserRouter } from 'react-router-dom';
 import { App as AntdApp, ConfigProvider, theme } from 'antd';
-import { ProConfigProvider, enUSIntl } from '@ant-design/pro-components';
+import {ProConfigProvider,  createIntl, intlMap} from '@ant-design/pro-components';
 import enUS from 'antd/locale/en_US';
 import AppRoutes from './routes/app.route.tsx';
 
@@ -28,11 +28,11 @@ function App() {
       }}
     >
       <AntdApp>
-        <ProConfigProvider intl={enUSIntl}>
           <BrowserRouter>
-            <AppRoutes />
+              <ProConfigProvider intl={createIntl('en-US', intlMap['en-US'])}>
+                  <AppRoutes />
+              </ProConfigProvider>
           </BrowserRouter>
-        </ProConfigProvider>
       </AntdApp>
     </ConfigProvider>
   );

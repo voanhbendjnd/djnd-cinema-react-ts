@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Input, Empty, Spin, Pagination, Tag, message, Modal, Alert } from 'antd';
+import { Card, Button, Empty, Spin, Pagination, Tag, message, Modal, Input } from 'antd';
 import {
     SearchOutlined,
     ReloadOutlined,
@@ -9,6 +9,7 @@ import {
     CheckCircleOutlined,
     ClockCircleOutlined,
     LockOutlined,
+    ThunderboltOutlined,
 } from '@ant-design/icons';
 import axiosClient from '@/services/axiosClient';
 import dayjs from 'dayjs';
@@ -27,44 +28,31 @@ interface PromotionDTO {
     status: 'UPCOMING' | 'ACTIVE' | 'EXPIRED' | 'SOLDOUT';
 }
 
-interface ResultMeta {
-    page: number;
-    pageSize: number;
-    pages: number;
-    total: number;
-}
 
 interface VoucherCollectResultDTO {
     errorMessages: string[];
     successTitles: string[];
 }
 
-interface ApiResponse {
-    statusCode: number;
-    message: string;
-    data: {
-        meta: ResultMeta;
-        result: PromotionDTO[];
-    };
-}
-
 const VoucherListPage: React.FC = () => {
     const [vouchers, setVouchers] = useState<PromotionDTO[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchText, setSearchText] = useState('');
-    const [selectedVouchers, setSelectedVouchers] = useState<number[]>([]);
-    const [claiming, setClaiming] = useState(false);
+
+    // ✅ Thay vì mảng selectedVouchers, giờ track loading theo từng id + loading claim all
+    const [claimingId, setClaimingId] = useState<number | null>(null);
+    const [claimingAll, setClaimingAll] = useState(false);
+
     const [pagination, setPagination] = useState({
         current: 1,
         pageSize: 12,
         total: 0,
     });
 
-    // ✅ Fetch vouchers
     const fetchVouchers = async (page = 1, pageSize = 12, query = '') => {
         try {
             setLoading(true);
-            const res = await axiosClient.get<ApiResponse>('/api/promotions/customer', {
+            const res = await axiosClient.get('/api/promotions/customer', {
                 params: {
                     q: query || '',
                     page: page - 1,
@@ -73,7 +61,7 @@ const VoucherListPage: React.FC = () => {
                 },
             });
 
-            const data = (res as unknown as IBackendRes<IModelPaginate<PromotionDTO>>).data
+            const data = (res as unknown as IBackendRes<IModelPaginate<PromotionDTO>>).data;
             if (data && data.result && Array.isArray(data.result)) {
                 setVouchers(data.result);
                 setPagination({
@@ -94,58 +82,71 @@ const VoucherListPage: React.FC = () => {
         fetchVouchers(1, 12, '');
     }, []);
 
-    // ✅ Claim vouchers
-    const handleClaimVouchers = async () => {
-        if (selectedVouchers.length === 0) {
-            message.warning('Please select at least one voucher');
+    // ✅ Hàm dùng chung cho cả claim 1 voucher và claim all
+    const claimVouchers = async (voucherIds: number[]) => {
+        try {
+            const res = await axiosClient.post<VoucherCollectResultDTO>(
+                '/api/promotions/vouchers/collect',
+                { voucherIds }
+            );
+
+            const result = (res as unknown as IBackendRes<VoucherCollectResultDTO>).data;
+
+            if (result?.successTitles && result.successTitles.length > 0) {
+                message.success(
+                    `Successfully claimed: ${result.successTitles.join(', ')}`
+                );
+            }
+
+            if (result?.errorMessages && result.errorMessages.length > 0) {
+                Modal.error({
+                    title: 'Some Vouchers Failed',
+                    content: (
+                        <ul>
+                            {result.errorMessages.map((msg, idx) => (
+                                <li key={idx}>{msg}</li>
+                            ))}
+                        </ul>
+                    ),
+                });
+            }
+
+            fetchVouchers(pagination.current, pagination.pageSize, searchText);
+        } catch (error: any) {
+            const errorMsg =
+                error?.response?.data?.message || 'Failed to claim vouchers';
+            message.error(errorMsg);
+        }
+    };
+
+    // ✅ OPTION 1: Claim ngay 1 voucher khi bấm nút trên card
+    const handleClaimSingle = async (voucher: PromotionDTO) => {
+        try {
+            setClaimingId(voucher.id);
+            await claimVouchers([voucher.id]);
+        } finally {
+            setClaimingId(null);
+        }
+
+    };
+
+    // ✅ OPTION 2: Claim All - lấy toàn bộ voucher đang ACTIVE trong danh sách hiện có
+    const handleClaimAll = async () => {
+        const activeVoucherIds = vouchers
+            .filter((v) => v.status === 'ACTIVE')
+            .map((v) => v.id);
+
+        if (activeVoucherIds.length === 0) {
+            message.warning('No available vouchers to claim');
             return;
         }
 
-        Modal.confirm({
-            title: 'Claim Vouchers',
-            content: `You are claiming ${selectedVouchers.length} voucher(s). Continue?`,
-            okText: 'Claim',
-            cancelText: 'Cancel',
-            onOk: async () => {
-                try {
-                    setClaiming(true);
-                    const res = await axiosClient.post<VoucherCollectResultDTO>(
-                        '/api/promotions/vouchers/collect',
-                        { voucherIds: selectedVouchers }
-                    );
-
-                    // ✅ Lấy đúng field "data" bên trong response
-                    const result = (res as unknown as IBackendRes<VoucherCollectResultDTO>).data;
-
-                    if (result?.successTitles && result.successTitles.length > 0) {
-                        message.success(
-                            `Successfully claimed: ${result.successTitles.join(', ')}`
-                        );
-                    }
-
-                    if (result?.errorMessages && result.errorMessages.length > 0) {
-                        Modal.error({
-                            title: 'Some Vouchers Failed',
-                            content: (
-                                <ul>
-                                    {result.errorMessages.map((msg, idx) => (
-                                        <li key={idx}>{msg}</li>
-                                    ))}
-                                </ul>
-                            ),
-                        });
-                    }
-
-                    setSelectedVouchers([]);
-                    fetchVouchers(pagination.current, pagination.pageSize, searchText);
-                } catch (error: any) {
-                    const errorMsg =
-                        error?.response?.data?.message || 'Failed to claim vouchers';
-                    message.error(errorMsg);
-                } finally {
-                    setClaiming(false);
-                }
-            },        });
+        try {
+            setClaimingAll(true);
+            await claimVouchers(activeVoucherIds);
+        } finally {
+            setClaimingAll(false);
+        }
     };
 
     const handleSearch = () => {
@@ -157,7 +158,6 @@ const VoucherListPage: React.FC = () => {
         fetchVouchers(1, 12, '');
     };
 
-    // ✅ Get status color and icon
     const getStatusInfo = (status: string) => {
         switch (status) {
             case 'ACTIVE':
@@ -173,13 +173,10 @@ const VoucherListPage: React.FC = () => {
         }
     };
 
+    const activeCount = vouchers.filter((v) => v.status === 'ACTIVE').length;
+
     return (
-        <div
-            style={{
-                minHeight: '100vh',
-                background: '#0f0f0f',                padding: '40px 20px',
-            }}
-        >
+        <div style={{ minHeight: '100vh', background: '#0f0f0f', padding: '40px 20px' }}>
             <div style={{ maxWidth: 1400, margin: '0 auto' }}>
                 {/* HEADER */}
                 <div style={{ marginBottom: 30 }}>
@@ -213,7 +210,7 @@ const VoucherListPage: React.FC = () => {
                         marginBottom: 24,
                     }}
                 >
-                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                         <Input
                             placeholder="Search vouchers..."
                             prefix={<SearchOutlined />}
@@ -234,11 +231,7 @@ const VoucherListPage: React.FC = () => {
                             type="primary"
                             onClick={handleSearch}
                             loading={loading}
-                            style={{
-                                background: '#e63946',
-                                border: 'none',
-                                fontWeight: 600,
-                            }}
+                            style={{ background: '#e63946', border: 'none', fontWeight: 600 }}
                         >
                             Search
                         </Button>
@@ -253,34 +246,23 @@ const VoucherListPage: React.FC = () => {
                         >
                             Reset
                         </Button>
-                    </div>
 
-                    {/* ACTION BUTTONS */}
-                    {selectedVouchers.length > 0 && (
-                        <Alert
-                            message={`${selectedVouchers.length} voucher(s) selected`}
-                            type="info"
-                            showIcon
-                            action={
-                                <Button
-                                    size="small"
-                                    type="primary"
-                                    loading={claiming}
-                                    onClick={handleClaimVouchers}
-                                    style={{
-                                        background: '#e63946',
-                                        border: 'none',
-                                    }}
-                                >
-                                    Claim All
-                                </Button>
-                            }
+                        {/* ✅ CLAIM ALL - luôn hiện, chỉ enable khi có voucher ACTIVE */}
+                        <Button
+                            icon={<ThunderboltOutlined />}
+                            type="primary"
+                            loading={claimingAll}
+                            disabled={activeCount === 0}
+                            onClick={handleClaimAll}
                             style={{
-                                background: 'rgba(230, 57, 70, 0.1)',
-                                border: '1px solid rgba(230, 57, 70, 0.3)',
+                                background: activeCount > 0 ? '#e63946' : 'rgba(255,255,255,0.06)',
+                                border: 'none',
+                                fontWeight: 600,
                             }}
-                        />
-                    )}
+                        >
+                            Claim All {activeCount > 0 ? `(${activeCount})` : ''}
+                        </Button>
+                    </div>
                 </Card>
 
                 {/* VOUCHER GRID */}
@@ -296,10 +278,7 @@ const VoucherListPage: React.FC = () => {
                             borderRadius: 12,
                         }}
                     >
-                        <Empty
-                            description="No vouchers available"
-                            style={{ color: 'rgba(255,255,255,0.4)' }}
-                        />
+                        <Empty description="No vouchers available" style={{ color: 'rgba(255,255,255,0.4)' }} />
                     </Card>
                 ) : (
                     <>
@@ -312,10 +291,9 @@ const VoucherListPage: React.FC = () => {
                             }}
                         >
                             {vouchers.map((voucher) => {
-                                const isSelected = selectedVouchers.includes(voucher.id);
                                 const statusInfo = getStatusInfo(voucher.status);
-                                const canClaim =
-                                    voucher.status === 'ACTIVE' && !selectedVouchers.includes(voucher.id);
+                                const canClaim = voucher.status === 'ACTIVE';
+                                const isClaimingThis = claimingId === voucher.id;
                                 const now = dayjs();
                                 const daysLeft = dayjs(voucher.endTime).diff(now, 'day');
 
@@ -324,34 +302,11 @@ const VoucherListPage: React.FC = () => {
                                         key={voucher.id}
                                         style={{
                                             background: '#111',
-                                            border: isSelected
-                                                ? '2px solid #e63946'
-                                                : '1px solid rgba(255,255,255,0.08)',
+                                            border: '1px solid rgba(255,255,255,0.08)',
                                             borderRadius: 12,
                                             overflow: 'hidden',
-                                            cursor: canClaim ? 'pointer' : 'default',
-                                            transition: 'all 0.3s',
-                                            boxShadow: isSelected
-                                                ? '0 0 20px rgba(230, 57, 70, 0.3)'
-                                                : 'none',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            if (canClaim) {
-                                                (
-                                                    e.currentTarget as HTMLDivElement
-                                                ).style.boxShadow =
-                                                    '0 4px 16px rgba(255,255,255,0.1)';
-                                            }
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            if (!isSelected) {
-                                                (
-                                                    e.currentTarget as HTMLDivElement
-                                                ).style.boxShadow = 'none';
-                                            }
                                         }}
                                     >
-                                        {/* THUMBNAIL */}
                                         {voucher.thumbnailUrl && (
                                             <div
                                                 style={{
@@ -364,22 +319,14 @@ const VoucherListPage: React.FC = () => {
                                                     marginBottom: 16,
                                                 }}
                                             >
-                                                {/* STATUS BADGE */}
                                                 <Tag
                                                     icon={statusInfo.icon}
                                                     color={statusInfo.color}
-                                                    style={{
-                                                        position: 'absolute',
-                                                        top: 8,
-                                                        right: 8,
-                                                        fontSize: 11,
-                                                        fontWeight: 600,
-                                                    }}
+                                                    style={{ position: 'absolute', top: 8, right: 8, fontSize: 11, fontWeight: 600 }}
                                                 >
                                                     {statusInfo.label}
                                                 </Tag>
 
-                                                {/* DISCOUNT BADGE */}
                                                 <div
                                                     style={{
                                                         position: 'absolute',
@@ -391,20 +338,13 @@ const VoucherListPage: React.FC = () => {
                                                         color: '#fff',
                                                     }}
                                                 >
-                                                    <div
-                                                        style={{
-                                                            fontSize: 24,
-                                                            fontWeight: 700,
-                                                            fontFamily: "'Bebas Neue', sans-serif",
-                                                        }}
-                                                    >
+                                                    <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "'Bebas Neue', sans-serif" }}>
                                                         {voucher.discountPercentage}%
                                                     </div>
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* CONTENT */}
                                         <div style={{ padding: '0 12px' }}>
                                             <h3
                                                 style={{
@@ -434,14 +374,7 @@ const VoucherListPage: React.FC = () => {
                                                 {voucher.detail}
                                             </p>
 
-                                            {/* DATES */}
-                                            <div
-                                                style={{
-                                                    marginBottom: 12,
-                                                    fontSize: 11,
-                                                    color: 'rgba(255,255,255,0.5)',
-                                                }}
-                                            >
+                                            <div style={{ marginBottom: 12, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
                                                 {voucher.status === 'ACTIVE' && daysLeft >= 0 && (
                                                     <div
                                                         style={{
@@ -450,65 +383,28 @@ const VoucherListPage: React.FC = () => {
                                                             marginBottom: 4,
                                                         }}
                                                     >
-                                                        {daysLeft === 0
-                                                            ? 'Expires today'
-                                                            : `${daysLeft} day${daysLeft > 1 ? 's' : ''} left`}
+                                                        {daysLeft === 0 ? 'Expires today' : `${daysLeft} day${daysLeft > 1 ? 's' : ''} left`}
                                                     </div>
                                                 )}
-                                                <div>
-                                                    Ends: {dayjs(voucher.endTime).format('DD/MM/YYYY')}
-                                                </div>
-                                                {voucher.quantity > 0 && (
-                                                    <div>
-                                                        {voucher.quantity} available
-                                                    </div>
-                                                )}
+                                                <div>Ends: {dayjs(voucher.endTime).format('DD/MM/YYYY')}</div>
+                                                {voucher.quantity > 0 && <div>{voucher.quantity} available</div>}
                                             </div>
 
-                                            {/* ACTION BUTTON */}
+                                            {/* ✅ ACTION BUTTON - claim ngay khi bấm */}
                                             <Button
                                                 block
-                                                onClick={() => {
-                                                    if (canClaim) {
-                                                        setSelectedVouchers([
-                                                            ...selectedVouchers,
-                                                            voucher.id,
-                                                        ]);
-                                                    } else if (isSelected) {
-                                                        setSelectedVouchers(
-                                                            selectedVouchers.filter(
-                                                                (id) => id !== voucher.id
-                                                            )
-                                                        );
-                                                    }
-                                                }}
-                                                type={isSelected ? 'primary' : 'default'}
-                                                disabled={
-                                                    voucher.status !== 'ACTIVE' && !isSelected
-                                                }
+                                                type={canClaim ? 'primary' : 'default'}
+                                                disabled={!canClaim}
+                                                loading={isClaimingThis}
+                                                onClick={() => handleClaimSingle(voucher)}
                                                 style={{
-                                                    background: isSelected
-                                                        ? '#e63946'
-                                                        : voucher.status === 'ACTIVE'
-                                                            ? 'rgba(255,255,255,0.06)'
-                                                            : 'rgba(255,255,255,0.02)',
-                                                    border: isSelected
-                                                        ? '1px solid #e63946'
-                                                        : '1px solid rgba(255,255,255,0.12)',
-                                                    color: isSelected ? '#fff' : 'rgba(255,255,255,0.7)',
+                                                    background: canClaim ? '#e63946' : 'rgba(255,255,255,0.02)',
+                                                    border: canClaim ? '1px solid #e63946' : '1px solid rgba(255,255,255,0.12)',
+                                                    color: canClaim ? '#fff' : 'rgba(255,255,255,0.5)',
                                                     fontWeight: 600,
-                                                    cursor: canClaim || isSelected ? 'pointer' : 'not-allowed',
                                                 }}
                                             >
-                                                {isSelected ? (
-                                                    <>
-                                                        <CheckCircleOutlined /> Selected
-                                                    </>
-                                                ) : voucher.status === 'ACTIVE' ? (
-                                                    'Claim Voucher'
-                                                ) : (
-                                                    statusInfo.label
-                                                )}
+                                                {canClaim ? 'Collect' : statusInfo.label}
                                             </Button>
                                         </div>
                                     </Card>
@@ -516,20 +412,15 @@ const VoucherListPage: React.FC = () => {
                             })}
                         </div>
 
-                        {/* PAGINATION */}
                         {pagination.total > 0 && (
                             <div style={{ textAlign: 'center', marginTop: 30 }}>
                                 <Pagination
                                     current={pagination.current}
                                     total={pagination.total}
                                     pageSize={pagination.pageSize}
-                                    onChange={(page) =>
-                                        fetchVouchers(page, pagination.pageSize, searchText)
-                                    }
+                                    onChange={(page) => fetchVouchers(page, pagination.pageSize, searchText)}
                                     showSizeChanger
-                                    onShowSizeChange={(_, pageSize) =>
-                                        fetchVouchers(1, pageSize, searchText)
-                                    }
+                                    onShowSizeChange={(_, pageSize) => fetchVouchers(1, pageSize, searchText)}
                                     pageSizeOptions={['12', '24', '48']}
                                     showTotal={(total) => `Total ${total} vouchers`}
                                 />

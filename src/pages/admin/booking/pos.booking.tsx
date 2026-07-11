@@ -15,7 +15,7 @@ import {
     notification,
     Modal,
     Space,
-    Typography
+    Typography, ConfigProvider
 } from 'antd';
 import {
     ClockCircleOutlined,
@@ -32,6 +32,8 @@ import { useAuthStore } from "@/store/useAuthStore.ts";
 import '@/styles/auth.css'; // Reuse auth background styles if appropriate
 import '@/styles/pos-radio.css';
 const { Option } = Select;
+import enUS from 'antd/locale/en_US';
+
 const { Title } = Typography;
 import 'dayjs/locale/en';
 
@@ -687,421 +689,424 @@ export const POSBookingPage: React.FC = () => {
     };
 
     return (
-        <div style={{ padding: '24px 16px', background: '#141414', minHeight: 'calc(100vh - 64px)', color: '#f5f5f5' }}>
-            {contextHolder}
+        <ConfigProvider locale={enUS}>
+            <div style={{ padding: '24px 16px', background: '#141414', minHeight: 'calc(100vh - 64px)', color: '#f5f5f5' }}>
+                {contextHolder}
 
-            <Title level={2} style={{ color: '#ffd700', letterSpacing: '1px', fontWeight: 600, marginBottom: 24, textTransform: 'uppercase' }}>
-                Counter Ticket POS Booking
-            </Title>
+                <Title level={2} style={{ color: '#ffd700', letterSpacing: '1px', fontWeight: 600, marginBottom: 24, textTransform: 'uppercase' }}>
+                    Counter Ticket POS Booking
+                </Title>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 24 }}>
-                {/* LEFT COLUMN: SETUP & CHECKOUT PANEL (5 grid cols) */}
-                <div style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    <Card
-                        title={<span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>1. SELECT MOVIE & DATE</span>}
-                        styles={{ body: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' } }}
-                        style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)' }}
-                    >
-                        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                            <div>
-                                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>CHOOSE MOVIE</div>
-                                <Select
-                                    showSearch
-                                    placeholder="Select a movie"
-                                    optionFilterProp="children"
-                                    value={selectedMovieId}
-                                    onChange={(val) => {
-                                        setSelectedMovieId(val);
-                                        setSelectedShowtime(null);
-                                    }}
-                                    loading={loadingMovies}
-                                    style={{ width: '100%' }}
-                                    dropdownStyle={{ background: '#222', border: '1px solid rgba(255,255,255,0.08)' }}
-                                >
-                                    {movies.map(movie => (
-                                        <Option key={movie.id} value={movie.id}>
-                                            <span style={{ color: '#fff' }}>{movie.title} ({movie.duration} mins)</span>
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 24 }}>
+                    {/* LEFT COLUMN: SETUP & CHECKOUT PANEL (5 grid cols) */}
+                    <div style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        <Card
+                            title={<span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>1. SELECT MOVIE & DATE</span>}
+                            styles={{ body: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' } }}
+                            style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)' }}
+                        >
+                            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                                <div>
+                                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>CHOOSE MOVIE</div>
+                                    <Select
+                                        showSearch
+                                        placeholder="Select a movie"
+                                        optionFilterProp="children"
+                                        value={selectedMovieId}
+                                        onChange={(val) => {
+                                            setSelectedMovieId(val);
+                                            setSelectedShowtime(null);
+                                        }}
+                                        loading={loadingMovies}
+                                        style={{ width: '100%' }}
+                                        dropdownStyle={{ background: '#222', border: '1px solid rgba(255,255,255,0.08)' }}
+                                    >
+                                        {movies.map(movie => (
+                                            <Option key={movie.id} value={movie.id}>
+                                                <span style={{ color: '#fff' }}>{movie.title} ({movie.duration} mins)</span>
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </div>
 
-                            <div>
-                                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>CHOOSE DATE</div>
-                                <Select
-                                    value={selectedDate.format('YYYY-MM-DD')}
-                                    onChange={(val) => setSelectedDate(dayjs(val))}
-                                    style={{ width: '100%' }}
-                                >
-                                    {dateList.map(date => (
-                                        <Option key={date.format('YYYY-MM-DD')} value={date.format('YYYY-MM-DD')}>
-                                            {date.format('dddd, MMMM DD, YYYY')} {date.isSame(dayjs(), 'day') ? '(Today)' : ''}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </div>
-                        </Space>
-                    </Card>
+                                <div>
+                                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>CHOOSE DATE</div>
+                                    <Select
+                                        value={selectedDate.format('YYYY-MM-DD')}
+                                        onChange={(val) => setSelectedDate(dayjs(val))}
+                                        style={{ width: '100%' }}
+                                    >
+                                        {dateList.map(date => (
+                                            <Option key={date.format('YYYY-MM-DD')} value={date.format('YYYY-MM-DD')}>
+                                                {date.format('dddd, MMMM DD, YYYY')} {date.isSame(dayjs(), 'day') ? '(Today)' : ''}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </div>
+                            </Space>
+                        </Card>
 
-                    <Card
-                        title={<span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>2. SELECT SHOWTIME</span>}
-                        styles={{ body: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' } }}
-                        style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)' }}
-                    >
-                        {loadingSchedules ? (
-                            <div style={{ textAlign: 'center', padding: '15px 0' }}><Spin size="small" /></div>
-                        ) : !selectedMovieId ? (
-                            <div style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '10px 0' }}>Please select a movie first</div>
-                        ) : schedules.length === 0 ? (
-                            <div style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '10px 0' }}>No showtimes on selected date</div>
-                        ) : (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                                {schedules.map((s) => {
-                                    const isSelected = selectedShowtime?.showtimeId === s.showtimeId;
-                                    return (
-                                        <button
-                                            key={s.showtimeId}
-                                            onClick={() => setSelectedShowtime(s)}
-                                            style={{
-                                                padding: '8px 12px',
-                                                borderRadius: 6,
-                                                cursor: 'pointer',
-                                                background: isSelected ? '#e63946' : 'rgba(255,255,255,0.04)',
-                                                border: isSelected
-                                                    ? '1px solid #e63946'
-                                                    : '1px solid rgba(255,255,255,0.1)',
-                                                color: isSelected ? '#fff' : '#f0ece3',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                minWidth: 80,
-                                                transition: 'all 0.15s',
-                                            }}
-                                        >
+                        <Card
+                            title={<span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>2. SELECT SHOWTIME</span>}
+                            styles={{ body: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' } }}
+                            style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)' }}
+                        >
+                            {loadingSchedules ? (
+                                <div style={{ textAlign: 'center', padding: '15px 0' }}><Spin size="small" /></div>
+                            ) : !selectedMovieId ? (
+                                <div style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '10px 0' }}>Please select a movie first</div>
+                            ) : schedules.length === 0 ? (
+                                <div style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '10px 0' }}>No showtimes on selected date</div>
+                            ) : (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                                    {schedules.map((s) => {
+                                        const isSelected = selectedShowtime?.showtimeId === s.showtimeId;
+                                        return (
+                                            <button
+                                                key={s.showtimeId}
+                                                onClick={() => setSelectedShowtime(s)}
+                                                style={{
+                                                    padding: '8px 12px',
+                                                    borderRadius: 6,
+                                                    cursor: 'pointer',
+                                                    background: isSelected ? '#e63946' : 'rgba(255,255,255,0.04)',
+                                                    border: isSelected
+                                                        ? '1px solid #e63946'
+                                                        : '1px solid rgba(255,255,255,0.1)',
+                                                    color: isSelected ? '#fff' : '#f0ece3',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    minWidth: 80,
+                                                    transition: 'all 0.15s',
+                                                }}
+                                            >
                                             <span style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                                                 <ClockCircleOutlined style={{ fontSize: 10 }} />
                                                 {dayjs(s.startDateTime).format('HH:mm')}
                                             </span>
-                                            <span style={{ fontSize: 9, opacity: 0.6, marginTop: 2 }}>
+                                                <span style={{ fontSize: 9, opacity: 0.6, marginTop: 2 }}>
                                                 Room {s.roomId}
                                             </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </Card>
-
-                    <Card
-                        title={<span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>3. CUSTOMER DETAILS</span>}
-                        styles={{ body: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' } }}
-                        style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)' }}
-                    >
-                        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                            <Radio.Group
-                                value={customerType}
-                                className="pos-radio-group"
-                                onChange={(e) => setCustomerType(e.target.value)}
-                                buttonStyle="solid"
-                                style={{ width: '100%', display: 'flex' }}
-                            >
-                                <Radio.Button value="guest" style={{ flex: 1, textAlign: 'center', background: 'transparent', borderColor: 'rgba(255,255,255,0.12)' }}>
-                                    Walk-in Guest
-                                </Radio.Button>
-                                <Radio.Button value="member" style={{ flex: 1, textAlign: 'center', background: 'transparent', borderColor: 'rgba(255,255,255,0.12)' }}>
-                                    Cinema Member
-                                </Radio.Button>
-                            </Radio.Group>
-
-                            {customerType === 'member' && (
-                                <div style={{ transition: 'all 0.3s ease' }}>
-                                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>MEMBER EMAIL</div>
-                                    <Space.Compact style={{ width: '100%' }}>
-                                        <Input
-                                            placeholder="Enter customer email"
-                                            value={customerEmail}
-                                            onChange={(e) => setCustomerEmail(e.target.value)}
-                                            onPressEnter={handleVerifyCustomer}
-                                        />
-                                        <Button
-                                            type="primary"
-                                            icon={<SearchOutlined />}
-                                            onClick={handleVerifyCustomer}
-                                            loading={verifyingCustomer}
-                                            style={{ background: '#e63946', borderColor: '#e63946' }}
-                                        >
-                                            Verify
-                                        </Button>
-                                    </Space.Compact>
-
-                                    {verifiedCustomer && (
-                                        <Alert
-                                            message={<span style={{ fontWeight: 600 }}>Verification Success</span>}
-                                            description={
-                                                <div style={{ fontSize: 12 }}>
-                                                    <div><strong>Name:</strong> {verifiedCustomer.name}</div>
-                                                    <div><strong>Email:</strong> {verifiedCustomer.email}</div>
-                                                    <div><strong>Phone:</strong> {verifiedCustomer.phone}</div>
-                                                </div>
-                                            }
-                                            type="success"
-                                            showIcon
-                                            style={{ marginTop: 12, background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)' }}
-                                        />
-                                    )}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             )}
+                        </Card>
 
-                            {customerType === 'guest' && (
-                                <Alert
-                                    message="Guest Booking (Non-member)"
-                                    description="No membership details required. Points will not be accumulated for this purchase."
-                                    type="info"
-                                    showIcon
-                                    style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)' }}
-                                />
-                            )}
-                        </Space>
-                    </Card>
-
-                    <Card
-                        title={<span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>4. CHECKOUT SUMMARY</span>}
-                        styles={{ body: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' } }}
-                        style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)' }}
-                    >
-                        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                            <div>
-                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>PAYMENT METHOD</div>
+                        <Card
+                            title={<span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>3. CUSTOMER DETAILS</span>}
+                            styles={{ body: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' } }}
+                            style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)' }}
+                        >
+                            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                                 <Radio.Group
-                                    value={paymentMethod}
+                                    value={customerType}
                                     className="pos-radio-group"
-                                    onChange={(e) => setPaymentMethod(e.target.value)}
+                                    onChange={(e) => setCustomerType(e.target.value)}
                                     buttonStyle="solid"
                                     style={{ width: '100%', display: 'flex' }}
                                 >
-                                    <Radio.Button value="COUNTER" style={{ flex: 1, textAlign: 'center', background: 'transparent', borderColor: 'rgba(255,255,255,0.12)' }}>
-                                        <DollarOutlined /> Cash/POS Counter
+                                    <Radio.Button value="guest" style={{ flex: 1, textAlign: 'center', background: 'transparent', borderColor: 'rgba(255,255,255,0.12)' }}>
+                                        Walk-in Guest
                                     </Radio.Button>
-                                    <Radio.Button value="VNPAY" style={{ flex: 1, textAlign: 'center', background: 'transparent', borderColor: 'rgba(255,255,255,0.12)' }}>
-                                        VNPay
+                                    <Radio.Button value="member" style={{ flex: 1, textAlign: 'center', background: 'transparent', borderColor: 'rgba(255,255,255,0.12)' }}>
+                                        Cinema Member
                                     </Radio.Button>
                                 </Radio.Group>
-                            </div>
 
-                            <Divider style={{ borderColor: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+                                {customerType === 'member' && (
+                                    <div style={{ transition: 'all 0.3s ease' }}>
+                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>MEMBER EMAIL</div>
+                                        <Space.Compact style={{ width: '100%' }}>
+                                            <Input
+                                                placeholder="Enter customer email"
+                                                value={customerEmail}
+                                                onChange={(e) => setCustomerEmail(e.target.value)}
+                                                onPressEnter={handleVerifyCustomer}
+                                            />
+                                            <Button
+                                                type="primary"
+                                                icon={<SearchOutlined />}
+                                                onClick={handleVerifyCustomer}
+                                                loading={verifyingCustomer}
+                                                style={{ background: '#e63946', borderColor: '#e63946' }}
+                                            >
+                                                Verify
+                                            </Button>
+                                        </Space.Compact>
 
-                            <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>TOTAL AMOUNT</span>
-                                <span style={{ fontSize: 24, fontWeight: 700, color: '#e63946', fontFamily: "'Bebas Neue', sans-serif" }}>
+                                        {verifiedCustomer && (
+                                            <Alert
+                                                message={<span style={{ fontWeight: 600 }}>Verification Success</span>}
+                                                description={
+                                                    <div style={{ fontSize: 12 }}>
+                                                        <div><strong>Name:</strong> {verifiedCustomer.name}</div>
+                                                        <div><strong>Email:</strong> {verifiedCustomer.email}</div>
+                                                        <div><strong>Phone:</strong> {verifiedCustomer.phone}</div>
+                                                    </div>
+                                                }
+                                                type="success"
+                                                showIcon
+                                                style={{ marginTop: 12, background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)' }}
+                                            />
+                                        )}
+                                    </div>
+                                )}
+
+                                {customerType === 'guest' && (
+                                    <Alert
+                                        message="Guest Booking (Non-member)"
+                                        description="No membership details required. Points will not be accumulated for this purchase."
+                                        type="info"
+                                        showIcon
+                                        style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)' }}
+                                    />
+                                )}
+                            </Space>
+                        </Card>
+
+                        <Card
+                            title={<span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>4. CHECKOUT SUMMARY</span>}
+                            styles={{ body: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)' } }}
+                            style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)' }}
+                        >
+                            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                                <div>
+                                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>PAYMENT METHOD</div>
+                                    <Radio.Group
+                                        value={paymentMethod}
+                                        className="pos-radio-group"
+                                        onChange={(e) => setPaymentMethod(e.target.value)}
+                                        buttonStyle="solid"
+                                        style={{ width: '100%', display: 'flex' }}
+                                    >
+                                        <Radio.Button value="COUNTER" style={{ flex: 1, textAlign: 'center', background: 'transparent', borderColor: 'rgba(255,255,255,0.12)' }}>
+                                            <DollarOutlined /> Cash/POS Counter
+                                        </Radio.Button>
+                                        <Radio.Button value="VNPAY" style={{ flex: 1, textAlign: 'center', background: 'transparent', borderColor: 'rgba(255,255,255,0.12)' }}>
+                                            VNPay
+                                        </Radio.Button>
+                                    </Radio.Group>
+                                </div>
+
+                                <Divider style={{ borderColor: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+
+                                <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>TOTAL AMOUNT</span>
+                                    <span style={{ fontSize: 24, fontWeight: 700, color: '#e63946', fontFamily: "'Bebas Neue', sans-serif" }}>
                                     {getTotalPrice().toLocaleString('vi-VN')}đ
                                 </span>
-                            </div>
+                                </div>
 
-                            <Button
-                                type="primary"
-                                disabled={selectedSeats.length === 0 || !selectedShowtime || (customerType === 'member' && !verifiedCustomer) || bookingInProgress}
-                                loading={bookingInProgress}
-                                onClick={handleConfirmBooking}
-                                style={{
-                                    width: '100%',
-                                    height: 44,
-                                    background: selectedSeats.length > 0 ? '#e63946' : undefined,
-                                    borderColor: selectedSeats.length > 0 ? '#e63946' : undefined,
-                                    fontWeight: 600,
-                                    fontSize: 15,
-                                    letterSpacing: 0.5
-                                }}
-                            >
-                                {bookingInProgress ? 'Completing Transaction...' : 'Confirm & Process Payment'}
-                            </Button>
-                        </Space>
-                    </Card>
-                </div>
+                                <Button
+                                    type="primary"
+                                    disabled={selectedSeats.length === 0 || !selectedShowtime || (customerType === 'member' && !verifiedCustomer) || bookingInProgress}
+                                    loading={bookingInProgress}
+                                    onClick={handleConfirmBooking}
+                                    style={{
+                                        width: '100%',
+                                        height: 44,
+                                        background: selectedSeats.length > 0 ? '#e63946' : undefined,
+                                        borderColor: selectedSeats.length > 0 ? '#e63946' : undefined,
+                                        fontWeight: 600,
+                                        fontSize: 15,
+                                        letterSpacing: 0.5
+                                    }}
+                                >
+                                    {bookingInProgress ? 'Completing Transaction...' : 'Confirm & Process Payment'}
+                                </Button>
+                            </Space>
+                        </Card>
+                    </div>
 
-                {/* RIGHT COLUMN: SEAT MAP PANEL (7 grid cols) */}
-                <div style={{ gridColumn: 'span 7' }}>
-                    <Card
-                        title={
-                            <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>SELECT SEATS</span>
-                                {selectedShowtime && (
-                                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+                    {/* RIGHT COLUMN: SEAT MAP PANEL (7 grid cols) */}
+                    <div style={{ gridColumn: 'span 7' }}>
+                        <Card
+                            title={
+                                <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>SELECT SEATS</span>
+                                    {selectedShowtime && (
+                                        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
                                         Room {selectedShowtime.roomId} • {dayjs(selectedShowtime.startDateTime).format('HH:mm')}
                                     </span>
-                                )}
-                            </div>
-                        }
-                        styles={{ body: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)', padding: 24 } }}
-                        style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)', minHeight: '100%' }}
-                    >
-                        {validationError && (
-                            <Alert
-                                message="Invalid Seat Selection"
-                                description={validationError}
-                                type="error"
-                                showIcon
-                                closable
-                                onClose={() => setValidationError(null)}
-                                style={{ marginBottom: 16 }}
-                            />
-                        )}
-
-                        <SeatGrid
-                            seats={seatData?.seats ?? []}
-                            selectedSeats={selectedSeats}
-                            onSelectSeats={(seats) => {
-                                setSelectedSeats(seats);
-                                setValidationError(null);
-                            }}
-                            loading={loadingSeats}
-                            onValidationError={(msg) => {
-                                setValidationError(msg);
-                                api.error({ message: 'Seat Rule Error', description: msg, placement: 'topRight' });
-                            }}
-                        />
-
-                        {selectedShowtime && seatData && (
-                            <>
-                                <Divider style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
-                                <div>
-                                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>
-                                        SELECTED SEATS ({selectedSeats.length})
-                                    </div>
-                                    {selectedSeats.length === 0 ? (
-                                        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Click on available seats to select</div>
-                                    ) : (
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                            {selectedSeats
-                                                .map(id => seatData.seats.find(s => s.id === id))
-                                                .filter(Boolean)
-                                                .map(seat => {
-                                                    const config = SEAT_TYPE_CONFIG[seat!.type] || SEAT_TYPE_CONFIG.STANDARD;
-                                                    return (
-                                                        <Tag
-                                                            key={seat!.id}
-                                                            closable
-                                                            onClose={() => setSelectedSeats(selectedSeats.filter(id => id !== seat!.id))}
-                                                            style={{ background: `${config.color}20`, border: `1px solid ${config.color}50`, color: config.color }}
-                                                        >
-                                                            {seat!.seatRow}{seat!.seatNo} ({config.label})
-                                                        </Tag>
-                                                    );
-                                                })}
-                                        </div>
                                     )}
                                 </div>
-                            </>
-                        )}
-                    </Card>
-                </div>
-            </div>
-
-            {/* RECEIPT / PRINT TICKET MODAL */}
-            <Modal
-                title={<span style={{ color: '#ffd700', fontWeight: 600 }}><CheckCircleOutlined /> Counter Booking Receipt</span>}
-                open={showReceiptModal}
-                onCancel={() => setShowReceiptModal(false)}
-                footer={[
-                    <Button key="close" onClick={() => setShowReceiptModal(false)}>Close</Button>,
-                    <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={handlePrintReceipt} style={{ background: '#e63946', borderColor: '#e63946' }}>
-                        Print Ticket
-                    </Button>
-                ]}
-                width={360}
-                styles={{ content: { background: '#181818', color: '#fff' } }}
-            >
-                {receiptData && (
-                    <div style={{ padding: '10px 0', maxHeight: '60vh', overflowY: 'auto' }}>
-                        <div
-                            ref={receiptRef}
-                            style={{
-                                background: '#fff',
-                                color: '#000',
-                                padding: '24px 16px',
-                                borderRadius: 8,
-                                fontFamily: 'monospace',
-                                border: '1px solid #ddd',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                            }}
+                            }
+                            styles={{ body: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)', padding: 24 } }}
+                            style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)', minHeight: '100%' }}
                         >
-                            {receiptData.tickets?.map((ticket: any, index: number) => (
-                                <div key={ticket.id || index} style={{ marginBottom: index !== receiptData.tickets.length - 1 ? 24 : 0, pageBreakAfter: index !== receiptData.tickets.length - 1 ? 'always' : 'auto' }}>
-                                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                                        <div style={{ fontSize: 18, fontWeight: 'bold', letterSpacing: 1 }}>PREMIERE CINEMA</div>
-                                        <div style={{ fontSize: 10, color: '#666' }}>POS TICKET OUTLET</div>
-                                        <div style={{ fontSize: 12, marginTop: 4 }}>Booking ID: {receiptData.bookingId}</div>
-                                        <div style={{ fontSize: 12 }}>Ticket Code: {ticket.ticketCode}</div>
-                                    </div>
+                            {validationError && (
+                                <Alert
+                                    message="Invalid Seat Selection"
+                                    description={validationError}
+                                    type="error"
+                                    showIcon
+                                    closable
+                                    onClose={() => setValidationError(null)}
+                                    style={{ marginBottom: 16 }}
+                                />
+                            )}
 
-                                    <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
+                            <SeatGrid
+                                seats={seatData?.seats ?? []}
+                                selectedSeats={selectedSeats}
+                                onSelectSeats={(seats) => {
+                                    setSelectedSeats(seats);
+                                    setValidationError(null);
+                                }}
+                                loading={loadingSeats}
+                                onValidationError={(msg) => {
+                                    setValidationError(msg);
+                                    api.error({ message: 'Seat Rule Error', description: msg, placement: 'topRight' });
+                                }}
+                            />
 
-                                    <div style={{ marginBottom: 12 }}>
-                                        <div style={{ fontSize: 14, fontWeight: 'bold' }}>{ticket.movieTitle?.toUpperCase()}</div>
-                                        <div style={{ fontSize: 12, marginTop: 4 }}>
-                                            <strong>Date:</strong> {ticket.releaseDate}
+                            {selectedShowtime && seatData && (
+                                <>
+                                    <Divider style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+                                    <div>
+                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>
+                                            SELECTED SEATS ({selectedSeats.length})
                                         </div>
-                                        <div style={{ fontSize: 12 }}>
-                                            <strong>Time:</strong> {ticket.startDateTime} - {ticket.endDateTime}
-                                        </div>
-                                        <div style={{ fontSize: 12 }}>
-                                            <strong>Room:</strong> Room {receiptData.room}
-                                        </div>
+                                        {selectedSeats.length === 0 ? (
+                                            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Click on available seats to select</div>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                                {selectedSeats
+                                                    .map(id => seatData.seats.find(s => s.id === id))
+                                                    .filter(Boolean)
+                                                    .map(seat => {
+                                                        const config = SEAT_TYPE_CONFIG[seat!.type] || SEAT_TYPE_CONFIG.STANDARD;
+                                                        return (
+                                                            <Tag
+                                                                key={seat!.id}
+                                                                closable
+                                                                onClose={() => setSelectedSeats(selectedSeats.filter(id => id !== seat!.id))}
+                                                                style={{ background: `${config.color}20`, border: `1px solid ${config.color}50`, color: config.color }}
+                                                            >
+                                                                {seat!.seatRow}{seat!.seatNo} ({config.label})
+                                                            </Tag>
+                                                        );
+                                                    })}
+                                            </div>
+                                        )}
                                     </div>
+                                </>
+                            )}
+                        </Card>
+                    </div>
+                </div>
 
-                                    <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
+                {/* RECEIPT / PRINT TICKET MODAL */}
+                <Modal
+                    title={<span style={{ color: '#ffd700', fontWeight: 600 }}><CheckCircleOutlined /> Counter Booking Receipt</span>}
+                    open={showReceiptModal}
+                    onCancel={() => setShowReceiptModal(false)}
+                    footer={[
+                        <Button key="close" onClick={() => setShowReceiptModal(false)}>Close</Button>,
+                        <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={handlePrintReceipt} style={{ background: '#e63946', borderColor: '#e63946' }}>
+                            Print Ticket
+                        </Button>
+                    ]}
+                    width={360}
+                    styles={{ content: { background: '#181818', color: '#fff' } }}
+                >
+                    {receiptData && (
+                        <div style={{ padding: '10px 0', maxHeight: '60vh', overflowY: 'auto' }}>
+                            <div
+                                ref={receiptRef}
+                                style={{
+                                    background: '#fff',
+                                    color: '#000',
+                                    padding: '24px 16px',
+                                    borderRadius: 8,
+                                    fontFamily: 'monospace',
+                                    border: '1px solid #ddd',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}
+                            >
+                                {receiptData.tickets?.map((ticket: any, index: number) => (
+                                    <div key={ticket.id || index} style={{ marginBottom: index !== receiptData.tickets.length - 1 ? 24 : 0, pageBreakAfter: index !== receiptData.tickets.length - 1 ? 'always' : 'auto' }}>
+                                        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                                            <div style={{ fontSize: 18, fontWeight: 'bold', letterSpacing: 1 }}>PREMIERE CINEMA</div>
+                                            <div style={{ fontSize: 10, color: '#666' }}>POS TICKET OUTLET</div>
+                                            <div style={{ fontSize: 12, marginTop: 4 }}>Booking ID: {receiptData.bookingId}</div>
+                                            <div style={{ fontSize: 12 }}>Ticket Code: {ticket.ticketCode}</div>
+                                        </div>
 
-                                    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 13, fontWeight: 'bold', marginBottom: 6 }}>
-                                        <span>SEAT:</span>
-                                        <span>{ticket.seatPosition} ({ticket.seatType})</span>
-                                    </div>
+                                        <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
 
-                                    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                                        <span>Customer:</span>
-                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>
+                                        <div style={{ marginBottom: 12 }}>
+                                            <div style={{ fontSize: 14, fontWeight: 'bold' }}>{ticket.movieTitle?.toUpperCase()}</div>
+                                            <div style={{ fontSize: 12, marginTop: 4 }}>
+                                                <strong>Date:</strong> {ticket.releaseDate}
+                                            </div>
+                                            <div style={{ fontSize: 12 }}>
+                                                <strong>Time:</strong> {ticket.startDateTime} - {ticket.endDateTime}
+                                            </div>
+                                            <div style={{ fontSize: 12 }}>
+                                                <strong>Room:</strong> Room {receiptData.room}
+                                            </div>
+                                        </div>
+
+                                        <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
+
+                                        <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 13, fontWeight: 'bold', marginBottom: 6 }}>
+                                            <span>SEAT:</span>
+                                            <span>{ticket.seatPosition} ({ticket.seatType})</span>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                                            <span>Customer:</span>
+                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>
                                             {receiptData.customerName}
                                         </span>
-                                    </div>
+                                        </div>
 
-                                    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 4 }}>
-                                        <span>Cashier:</span>
-                                        <span>{ticket.cashBy || receiptData.cashier}</span>
-                                    </div>
+                                        <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 4 }}>
+                                            <span>Cashier:</span>
+                                            <span>{ticket.cashBy || receiptData.cashier}</span>
+                                        </div>
 
-                                    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 4 }}>
-                                        <span>Payment:</span>
-                                        <span>{ticket.paymentMethod || receiptData.paymentMethod}</span>
-                                    </div>
+                                        <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 4 }}>
+                                            <span>Payment:</span>
+                                            <span>{ticket.paymentMethod || receiptData.paymentMethod}</span>
+                                        </div>
 
-                                    <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
+                                        <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
 
-                                    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: 13, fontWeight: 'bold' }}>TICKET PRICE:</span>
-                                        <span style={{ fontSize: 16, fontWeight: 'bold' }}>
+                                        <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: 13, fontWeight: 'bold' }}>TICKET PRICE:</span>
+                                            <span style={{ fontSize: 16, fontWeight: 'bold' }}>
                                             {ticket.price ? ticket.price.toLocaleString('vi-VN') : '0'}đ
                                         </span>
-                                    </div>
+                                        </div>
 
-                                    <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
+                                        <div style={{ borderTop: '1px dashed #000', margin: '12px 0' }}></div>
 
-                                    <div style={{ textAlign: 'center', fontSize: 9, color: '#666', marginTop: 8 }}>
-                                        THANK YOU FOR CHOOSING PREMIERE!<br />
-                                        ENJOY YOUR MOVIE!
+                                        <div style={{ textAlign: 'center', fontSize: 9, color: '#666', marginTop: 8 }}>
+                                            THANK YOU FOR CHOOSING PREMIERE!<br />
+                                            ENJOY YOUR MOVIE!
+                                        </div>
+
+                                        {index !== receiptData.tickets.length - 1 && (
+                                            <div style={{ borderTop: '2px dashed #000', margin: '24px 0' }}></div>
+                                        )}
                                     </div>
-                                    
-                                    {index !== receiptData.tickets.length - 1 && (
-                                        <div style={{ borderTop: '2px dashed #000', margin: '24px 0' }}></div>
-                                    )}
-                                </div>
-                            ))}
-                            
-                            {(!receiptData.tickets || receiptData.tickets.length === 0) && (
-                                <div style={{ textAlign: 'center', padding: '20px' }}>No tickets available</div>
-                            )}
+                                ))}
+
+                                {(!receiptData.tickets || receiptData.tickets.length === 0) && (
+                                    <div style={{ textAlign: 'center', padding: '20px' }}>No tickets available</div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
-            </Modal>
-        </div>
+                    )}
+                </Modal>
+            </div>
+
+        </ConfigProvider>
     );
 };
 
