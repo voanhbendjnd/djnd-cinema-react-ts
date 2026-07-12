@@ -142,7 +142,7 @@ const AccountInfoPage: React.FC = () => {
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [api, contextHolder] = notification.useNotification();
 
-    // ── Inline edit state cho profile (name + gender, hiển thị ở hero) ──
+    // ── Inline edit state cho account (name + gender, hiển thị ở hero) ──
     const [profileEditing, setProfileEditing] = useState(false);
     const [profileSubmitting, setProfileSubmitting] = useState(false);
     const [profileForm] = Form.useForm();
@@ -170,7 +170,7 @@ const AccountInfoPage: React.FC = () => {
                 setInfo(data);
             })
             .catch(() => api.error({
-                message: 'Cannot loading data profile',
+                message: 'Cannot loading data account',
                 placement: 'topRight',
             }));
     };
@@ -296,7 +296,7 @@ const AccountInfoPage: React.FC = () => {
             setProfileEditing(false);
         } catch (err: any) {
             if (err?.errorFields) return;
-            const msg = err?.response?.data?.message || 'Failed to update profile';
+            const msg = err?.response?.data?.message || 'Failed to update account';
             api.error({ message: msg, placement: 'topRight' });
         } finally {
             setProfileSubmitting(false);
@@ -374,7 +374,7 @@ const AccountInfoPage: React.FC = () => {
             await fetchInfo();
         } catch (err: any) {
             if (err?.errorFields) return;
-            const msg = err?.response?.data?.message || 'Failed to update profile information';
+            const msg = err?.response?.data?.message || 'Failed to update account information';
             api.error({ message: msg, placement: 'topRight' });
         } finally {
             setAccountSubmitting(false);

@@ -19,7 +19,7 @@ import PermissionManagement from "@/pages/admin/permission/permission.management
 import TicketLookup from '@/pages/admin/ticket-lookup';
 import HomePage from "@/pages/user/home/page.tsx";
 import HomeLayout from "@/pages/user/layout.tsx";
-import AccountInfoPage from "@/pages/user/profile/page.tsx";
+import AccountInfoPage from "@/pages/user/you/account/page.tsx";
 import ShowtimePriceManagement from "@/pages/admin/showtime-price/showtime.price.management.tsx";
 import VNPayReturnPage from "@/pages/user/payment/vnpay-return.tsx";
 import MovieListPage from "@/pages/user/movies/movie.list.page.tsx";
@@ -31,6 +31,7 @@ import BookingDetail from "@/pages/admin/booking/booking.detail.tsx";
 import TicketListPage from "@/pages/user/tickets/ticket.list.page.tsx";
 import TicketDetailPage from "@/pages/user/tickets/ticket.detail.page.tsx";
 import VoucherListPage from "@/pages/user/promotion/page.tsx";
+import MyVouchersPage from "@/pages/user/you/voucher/page.tsx";
 
 const AppRoutes: React.FC = () => {
     const { isAuthenticated, role } = useAuthStore();
@@ -129,7 +130,9 @@ const AppRoutes: React.FC = () => {
 
             <Route element={<ProtectedRoute requiredRole="ROLE_CUSTOMER" />}>
                 <Route element={<HomeLayout />} >
-                    <Route path="/profile" element={<AccountInfoPage />} />
+                    <Route path="/you/account" element={<AccountInfoPage />} />
+                    <Route path="/you/voucher" element={<MyVouchersPage />} />
+
                     <Route path="/tickets" element={<TicketListPage />} />
                     <Route path="/tickets/:id" element={<TicketDetailPage />} />
                 </Route>

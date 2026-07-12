@@ -1,4 +1,4 @@
-// src/pages/profile/ActivateAccount.tsx
+// src/pages/account/ActivateAccount.tsx
 
 import { useEffect, useState, useRef } from "react";
 import { Result, Spin } from "antd";

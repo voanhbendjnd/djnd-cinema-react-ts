@@ -546,7 +546,7 @@ export const POSBookingPage: React.FC = () => {
                     placement: 'topRight'
                 });
             } else {
-                api.error({ message: 'Customer profile not found', placement: 'topRight' });
+                api.error({ message: 'Customer account not found', placement: 'topRight' });
             }
         } catch (error: any) {
             const errorMsg = error?.response?.data?.message || 'Verification failed. Customer not found.';

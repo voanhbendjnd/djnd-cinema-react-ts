@@ -53,11 +53,12 @@ const HomeHeader: React.FC = () => {
       <>
         <div className="home__topbar">
           <div className="topbar__inner">
-            <span className="topbar__item">🎟 NEWS & OFFERS</span>
             <span className="topbar__item">🎫 MY TICKETS</span>
-            <Link to={"/profile"} style={{textDecoration:'none'}}>
+            <Link to={"/you/account"} style={{textDecoration:'none'}}>
               <span className="topbar__item">👤 ACCOUNT</span>
-
+            </Link>
+            <Link to={"/you/voucher"} style={{textDecoration:'none'}}>
+              <span className="topbar__item">🎟 VOUCHER</span>
             </Link>
             {
               !isAuthenticated ? (

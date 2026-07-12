@@ -18,7 +18,7 @@ const Register: React.FC = () => {
       await authService.register(values);
       api.success({ 
         message: 'Success',
-        description: 'Register successfully, please check mail activated profile',
+        description: 'Register successfully, please check mail activated account',
         placement: 'topRight'
       });
       navigate('/login');

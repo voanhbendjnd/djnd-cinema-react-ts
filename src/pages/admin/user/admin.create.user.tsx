@@ -93,7 +93,7 @@ const AdminCreateUser: React.FC<Props> = ({ onClose }) => {
                 form.setFields([{ name: 'roleId', errors: ['Role invalid!'] }]);
             } else {
                 message.error({
-                    content: backendMsg || 'Create profile failure, try again.',
+                    content: backendMsg || 'Create account failure, try again.',
                     style: { marginTop: '20vh' },
                 });
             }
