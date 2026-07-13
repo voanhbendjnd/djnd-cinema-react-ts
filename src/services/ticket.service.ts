@@ -50,6 +50,8 @@ export const ticketService = {
 
     return response as unknown as IBackendRes<IModelPaginate<CustomerTicket>>;
   },
+  exchangeTicketToPoints: (ticketId: number) =>
+      axiosClient.post(`/api/v1/ticket/${ticketId}/exchange-to-points`),
 
   getTicketDetail: async (ticketId: number | string) => {
     const response = await axiosClient.get(`/api/v1/tickets/${ticketId}`);

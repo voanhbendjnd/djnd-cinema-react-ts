@@ -269,3 +269,34 @@
     min-width: 0;
   }
 }
+
+.ticket-card__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.ticket-price {
+  font-weight: 700;
+  color: #10b981;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.ticket-card__actions button {
+  flex: 1;
+  min-width: 120px;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .ticket-card__actions {
+    flex-direction: column;
+  }
+
+  .ticket-card__actions button {
+    width: 100%;
+  }
+}
