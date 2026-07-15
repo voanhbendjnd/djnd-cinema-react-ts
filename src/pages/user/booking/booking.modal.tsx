@@ -18,7 +18,9 @@ import {
     LeftOutlined,
     RightOutlined,
     ClockCircleOutlined,
-    LoginOutlined
+    LoginOutlined,
+    StarFilled,
+    CreditCardOutlined,
 } from '@ant-design/icons';
 import 'dayjs/locale/en';
 import axiosClient, { baseURL } from '@/services/axiosClient';
@@ -464,6 +466,9 @@ export const BookingModal: React.FC<{
     const [loading, setLoading] = useState(false);
     const [seatData, setSeatData] = useState<ResSeatAtRoomBookingDTO | null>(null);
     const [booking, setBooking] = useState(false);
+    const [usePointMode, setUsePointMode] = useState(false);
+    const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
+    const [pointsLoading, setPointsLoading] = useState(false);
     const dateScrollRef = useRef<HTMLDivElement>(null);
 
     // ─── VOUCHER STATE ───
@@ -474,6 +479,21 @@ export const BookingModal: React.FC<{
 
     const voucherCursorRef = useRef<string | null>(null);
     const voucherCursorIdRef = useRef<number | null>(null);
+
+    const fetchLoyaltyPoints = useCallback(async () => {
+        if (!isAuthenticated) return;
+        setPointsLoading(true);
+        try {
+            const res = await axiosClient.get<any>('/api/v1/account/info');
+            const data = (res as any)?.data ?? res;
+            setLoyaltyPoints(data?.loyaltyPoints ?? 0);
+        } catch (err) {
+            console.error('[fetchLoyaltyPoints] failed:', err);
+            setLoyaltyPoints(0);
+        } finally {
+            setPointsLoading(false);
+        }
+    }, [isAuthenticated]);
 
     const fetchVouchers = useCallback(async (reset = false) => {
         if (!isAuthenticated) return;
@@ -507,8 +527,9 @@ export const BookingModal: React.FC<{
             voucherCursorRef.current = null;
             voucherCursorIdRef.current = null;
             fetchVouchers(true);
+            fetchLoyaltyPoints();
         }
-    }, [step, isAuthenticated, fetchVouchers]);
+    }, [step, isAuthenticated, fetchVouchers, fetchLoyaltyPoints]);
 
     // ─────────────────────────────────────────────────────────
     // RESET WHEN MODAL OPENS
@@ -516,6 +537,7 @@ export const BookingModal: React.FC<{
 
     useEffect(() => {
         if (movieId == null) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setStep('showtime');
         setSelectedDate(dateList[0]);
         setSelectedShowtime(null);
@@ -526,6 +548,8 @@ export const BookingModal: React.FC<{
         voucherCursorRef.current = null;
         voucherCursorIdRef.current = null;
         setVoucherHasMore(false);
+        setUsePointMode(false);
+        setLoyaltyPoints(null);
     }, [movieId]);
 
     // ─────────────────────────────────────────────────────────
@@ -718,12 +742,51 @@ export const BookingModal: React.FC<{
         }
     };
 
+    const handleConfirmWithPoints = async () => {
+        if (selectedSeats.length === 0 || !selectedShowtime) return;
+
+        setBooking(true);
+        try {
+            const res = await axiosClient.post('/api/v1/bookings/exchange-to-ticket', {
+                showtimeId: selectedShowtime.showtimeId,
+                seatIds: selectedSeats,
+                paymentMethod: 'EXCHANGE_USING_POINTS',
+                ...(selectedVoucher ? { voucherId: selectedVoucher.id } : {}),
+            });
+
+            const data = (res as any)?.data ?? res;
+            api.success({
+                message: 'Booking success!',
+                description: `Ticket have been booked ${data?.totalPoints ?? loyaltyPoints} using reward points.`,
+                placement: 'topRight',
+                duration: 6,
+            });
+            // Refresh loyalty points
+            fetchLoyaltyPoints();
+            onClose();
+        } catch (error: any) {
+            const message =
+                error?.response?.data?.message ||
+                error?.response?.data?.description ||
+                'Không đủ điểm hoặc đã có lỗi xảy ra. Vui lòng thử lại.';
+            api.error({
+                message: 'Đổi điểm thất bại',
+                description: message,
+                placement: 'topRight',
+                duration: 5,
+            });
+        } finally {
+            setBooking(false);
+        }
+    };
+
     const handleBack = () => {
         if (step === 'seat') {
             setStep('showtime');
             setSelectedShowtime(null);
             setSeatData(null);
             setSelectedSeats([]);
+            setUsePointMode(false);
         } else {
             onClose();
         }
@@ -994,7 +1057,7 @@ export const BookingModal: React.FC<{
                         <SeatGrid
                             seats={seatData?.seats ?? []}
                             selectedSeats={selectedSeats}
-                            onSelectSeats={handleSelectSeats}  // ✅ Thay đổi
+                            onSelectSeats={handleSelectSeats}
                             loading={loading}
                             onValidationError={(message) => {
                                 setValidationError(message);
@@ -1053,10 +1116,7 @@ export const BookingModal: React.FC<{
                                                         key={seat!.id}
                                                         closable
                                                         onClose={() => {
-                                                            // ✅ Remove seat(s) when tag is closed
                                                             let newSeats = selectedSeats.filter(id => id !== seat!.id);
-
-                                                            // If SWEETBOX, also remove pair
                                                             if (seat!.type === 'SWEETBOX') {
                                                                 const sameRowSeats = seatData?.seats.filter(s => s.seatRow === seat!.seatRow) || [];
                                                                 const pairNo = seat!.seatNo % 2 === 1 ? seat!.seatNo + 1 : seat!.seatNo - 1;
@@ -1065,7 +1125,6 @@ export const BookingModal: React.FC<{
                                                                     newSeats = newSeats.filter(id => id !== pairSeat.id);
                                                                 }
                                                             }
-
                                                             handleSelectSeats(newSeats);
                                                         }}
                                                         style={{
@@ -1085,74 +1144,230 @@ export const BookingModal: React.FC<{
 
                             <Divider style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '12px 0' }} />
 
-                            {/* VOUCHER SECTION */}
-                            <VoucherSelector
-                                vouchers={vouchers}
-                                selectedVoucher={selectedVoucher}
-                                voucherLoading={voucherLoading}
-                                voucherHasMore={voucherHasMore}
-                                onSelectVoucher={setSelectedVoucher}
-                                onLoadMore={() => fetchVouchers(false)}
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                //@ts-expect-error
-                                onOpenPanel={() => {
-                                    if (vouchers.length === 0 && !voucherLoading) {
-                                        voucherCursorRef.current = null;
-                                        voucherCursorIdRef.current = null;
-                                        fetchVouchers(true);
-                                    }
-                                }}
-                            />
-
-                            <Divider style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '12px 0' }} />
-
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
-                                <span>Original Price:</span>
-                                <span>{getOriginalPrice().toLocaleString('vi-VN')}đ</span>
+                            {/* PAYMENT MODE TOGGLE */}
+                            <div style={{ marginBottom: 12 }}>
+                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginBottom: 8, fontWeight: 600 }}>
+                                    PAYMENT METHOD
+                                </div>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <button
+                                        onClick={() => setUsePointMode(false)}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 12px',
+                                            borderRadius: 8,
+                                            cursor: 'pointer',
+                                            border: !usePointMode ? '2px solid #e63946' : '1px solid rgba(255,255,255,0.15)',
+                                            background: !usePointMode ? 'rgba(230,57,70,0.15)' : 'rgba(255,255,255,0.04)',
+                                            color: !usePointMode ? '#e63946' : 'rgba(255,255,255,0.55)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 6,
+                                            fontWeight: !usePointMode ? 700 : 500,
+                                            fontSize: 13,
+                                            transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        <CreditCardOutlined style={{ fontSize: 14 }} />
+                                        VNPAY
+                                    </button>
+                                    <button
+                                        onClick={() => setUsePointMode(true)}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 12px',
+                                            borderRadius: 8,
+                                            cursor: 'pointer',
+                                            border: usePointMode ? '2px solid #f59e0b' : '1px solid rgba(255,255,255,0.15)',
+                                            background: usePointMode ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.04)',
+                                            color: usePointMode ? '#f59e0b' : 'rgba(255,255,255,0.55)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 6,
+                                            fontWeight: usePointMode ? 700 : 500,
+                                            fontSize: 13,
+                                            transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        <StarFilled style={{ fontSize: 13 }} />
+                                        Use point
+                                    </button>
+                                </div>
                             </div>
-                            
-                            {selectedVoucher && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12, color: '#ec4899', fontWeight: 600 }}>
-                                    <span>Discount (-{selectedVoucher.discountPercentage}%):</span>
-                                    <span>-{getDiscountAmount().toLocaleString('vi-VN')}đ</span>
+
+                            {/* POINT INFO PANEL */}
+                            {usePointMode && (
+                                <div
+                                    style={{
+                                        padding: '12px 14px',
+                                        borderRadius: 8,
+                                        background: 'rgba(245,158,11,0.08)',
+                                        border: '1px solid rgba(245,158,11,0.3)',
+                                        marginBottom: 12,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: 12,
+                                    }}
+                                >
+                                    <div>
+                                        <div style={{ fontSize: 11, color: 'rgba(245,158,11,0.8)', letterSpacing: 0.5, marginBottom: 4, fontWeight: 600 }}>
+                                            ĐIỂM TÍCH LŨY KHẢ DỤNG
+                                        </div>
+                                        <div style={{ fontSize: 22, fontWeight: 700, color: '#f59e0b', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 0.5 }}>
+                                            {pointsLoading ? '...' : (loyaltyPoints ?? 0).toLocaleString('vi-VN')}
+                                            <span style={{ fontSize: 12, marginLeft: 4, fontFamily: 'inherit', fontWeight: 500 }}>pts</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>Chi phí đổi vé</div>
+                                        <div style={{ fontSize: 15, fontWeight: 700, color: '#f0ece3' }}>
+                                            {getOriginalPrice().toLocaleString('vi-VN')} pts
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
-                                    TOTAL AMOUNT
-                                </span>
-                                <span
+                            {usePointMode && loyaltyPoints !== null && loyaltyPoints < getOriginalPrice() && (
+                                <div
                                     style={{
-                                        fontSize: 22,
-                                        fontWeight: 700,
-                                        color: '#e63946',
-                                        fontFamily: "'Bebas Neue', sans-serif",
-                                        letterSpacing: 0.5,
+                                        padding: '8px 12px',
+                                        borderRadius: 6,
+                                        background: 'rgba(239,68,68,0.08)',
+                                        border: '1px solid rgba(239,68,68,0.3)',
+                                        marginBottom: 12,
+                                        fontSize: 12,
+                                        color: '#f87171',
                                     }}
                                 >
-                                    {getTotalPrice().toLocaleString('vi-VN')}đ
-                                </span>
-                            </div>
+                                    ⚠ Không đủ điểm. Bạn cần {getOriginalPrice().toLocaleString('vi-VN')} điểm nhưng chỉ có {loyaltyPoints.toLocaleString('vi-VN')} điểm.
+                                </div>
+                            )}
+
+                            {/* VOUCHER SECTION (chỉ khi thanh toán VNPAY) */}
+                            {!usePointMode && (
+                                <VoucherSelector
+                                    vouchers={vouchers}
+                                    selectedVoucher={selectedVoucher}
+                                    voucherLoading={voucherLoading}
+                                    voucherHasMore={voucherHasMore}
+                                    onSelectVoucher={setSelectedVoucher}
+                                    onLoadMore={() => fetchVouchers(false)}
+                                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                    //@ts-expect-error
+
+                                    onOpenPanel={() => {
+                                        if (vouchers.length === 0 && !voucherLoading) {
+                                            voucherCursorRef.current = null;
+                                            voucherCursorIdRef.current = null;
+                                            fetchVouchers(true);
+                                        }
+                                    }}
+                                />
+                            )}
+
+                            <Divider style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '12px 0' }} />
+
+                            {!usePointMode && (
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                                        <span>Original Price:</span>
+                                        <span>{getOriginalPrice().toLocaleString('vi-VN')}đ</span>
+                                    </div>
+
+                                    {selectedVoucher && (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12, color: '#ec4899', fontWeight: 600 }}>
+                                            <span>Discount (-{selectedVoucher.discountPercentage}%):</span>
+                                            <span>-{getDiscountAmount().toLocaleString('vi-VN')}đ</span>
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                                        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                                            TOTAL AMOUNT
+                                        </span>
+                                        <span
+                                            style={{
+                                                fontSize: 22,
+                                                fontWeight: 700,
+                                                color: '#e63946',
+                                                fontFamily: "'Bebas Neue', sans-serif",
+                                                letterSpacing: 0.5,
+                                            }}
+                                        >
+                                            {getTotalPrice().toLocaleString('vi-VN')}đ
+                                        </span>
+                                    </div>
+                                </>
+                            )}
+
+                            {usePointMode && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                                        ĐIỂM SẼ DÙNG
+                                    </span>
+                                    <span
+                                        style={{
+                                            fontSize: 22,
+                                            fontWeight: 700,
+                                            color: '#f59e0b',
+                                            fontFamily: "'Bebas Neue', sans-serif",
+                                            letterSpacing: 0.5,
+                                        }}
+                                    >
+                                        {getOriginalPrice().toLocaleString('vi-VN')} pts
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         {/* ACTION BUTTONS */}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                             <Button onClick={handleBack}>← Back</Button>
-                            <Button
-                                type="primary"
-                                disabled={selectedSeats.length === 0 || booking}
-                                loading={booking}
-                                onClick={handleConfirmBooking}
-                                style={{
-                                    background: selectedSeats.length > 0 ? '#e63946' : undefined,
-                                    border: 'none',
-                                    fontWeight: 600,
-                                    letterSpacing: 0.5,
-                                }}
-                            >
-                                {booking ? 'Processing...' : 'Proceed to Payment'}
-                            </Button>
+                            {!usePointMode ? (
+                                <Button
+                                    type="primary"
+                                    disabled={selectedSeats.length === 0 || booking}
+                                    loading={booking}
+                                    onClick={handleConfirmBooking}
+                                    style={{
+                                        background: selectedSeats.length > 0 ? '#e63946' : undefined,
+                                        border: 'none',
+                                        fontWeight: 600,
+                                        letterSpacing: 0.5,
+                                    }}
+                                >
+                                    {booking ? 'Processing...' : 'Proceed to Payment'}
+                                </Button>
+                            ) : (
+                                <Button
+                                    type="primary"
+                                    disabled={
+                                        selectedSeats.length === 0 ||
+                                        booking ||
+                                        pointsLoading ||
+                                        (loyaltyPoints !== null && loyaltyPoints < getOriginalPrice())
+                                    }
+                                    loading={booking}
+                                    onClick={handleConfirmWithPoints}
+                                    style={{
+                                        background:
+                                            selectedSeats.length > 0 &&
+                                            (loyaltyPoints === null || loyaltyPoints >= getOriginalPrice())
+                                                ? '#f59e0b'
+                                                : undefined,
+                                        border: 'none',
+                                        fontWeight: 600,
+                                        letterSpacing: 0.5,
+                                        color: '#000',
+                                    }}
+                                    icon={<StarFilled />}
+                                >
+                                    {booking ? 'Đang xử lý...' : 'Submit'}
+                                </Button>
+                            )}
                         </div>
                     </>
                 )}
