@@ -15,16 +15,18 @@ import {
     Alert,
     Modal,
     Spin, notification,
+    Segmented,
 } from 'antd';
-import { SaveOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SaveOutlined, ReloadOutlined, ToolOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import {
     RoomStatus,
     RoomType,
     ROOM_STATUS_LABELS,
     ROOM_TYPE_LABELS,
     SEAT_TYPE_LABELS,
+    SEAT_STATUS_LABELS,
 } from '@/types/room.types.ts';
-import type { RoomDetailDTO, SeatDTO, SeatTypeType } from '@/types/room.types.ts';
+import type { RoomDetailDTO, SeatDTO, SeatTypeType, SeatStatusType } from '@/types/room.types.ts';
 import { roomService } from '@/services/room.service.ts';
 
 const { Text } = Typography;
@@ -32,6 +34,9 @@ const { Option } = Select;
 
 const MAX_ROWS = 10;
 const MAX_COLS = 30;
+
+// Which attribute the user is currently painting onto seats when they click on the chart
+type EditMode = 'TYPE' | 'STATUS';
 
 const getDefaultSeatType = (
     rowLetter: string,
@@ -52,12 +57,18 @@ const seatColor: Record<string, string> = {
     SWEETBOX: '#ff85c0',
 };
 
+const seatStatusColor: Record<string, string> = {
+    ACTIVE: '#52c41a',
+    MAINTENANCE: '#ff4d4f',
+};
+
 const seatKey = (row: string, no: number) => `${row}-${no}`;
 const pairSeatNo = (seatNo: number): number => (seatNo % 2 === 1 ? seatNo + 1 : seatNo - 1);
 
 interface SeatCell {
     id?: number;
     type: SeatTypeType;
+    status: SeatStatusType;
 }
 
 interface RoomUpdateModalProps {
@@ -75,7 +86,10 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
     const totalRows = Form.useWatch('totalRows', form);
     const totalCols = Form.useWatch('totalCols', form);
 
+    // What attribute clicking on a seat currently paints
+    const [editMode, setEditMode] = useState<EditMode>('TYPE');
     const [activeType, setActiveType] = useState<SeatTypeType>('STANDARD');
+    const [activeStatus, setActiveStatus] = useState<SeatStatusType>('MAINTENANCE');
     const [seatTypes, setSeatTypes] = useState<Record<string, SeatCell>>({});
     const [api, contextHolder] = notification.useNotification();
 
@@ -115,7 +129,11 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
 
                 const map: Record<string, SeatCell> = {};
                 seats.forEach((s) => {
-                    map[seatKey(s.seatRow, s.seatNo)] = { id: s.id, type: s.type as SeatTypeType };
+                    map[seatKey(s.seatRow, s.seatNo)] = {
+                        id: s.id,
+                        type: s.type as SeatTypeType,
+                        status: (s.status as SeatStatusType) ?? 'ACTIVE',
+                    };
                 });
                 setSeatTypes(map);
             } catch (error: any) {
@@ -136,6 +154,8 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
             form.resetFields();
             setSeatTypes({});
             setActiveType('STANDARD');
+            setActiveStatus('MAINTENANCE');
+            setEditMode('TYPE');
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
@@ -149,7 +169,10 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
             rowLetters.forEach((rowLetter) => {
                 for (let no = 1; no <= cols; no++) {
                     const key = seatKey(rowLetter, no);
-                    next[key] = prev[key] ?? { type: getDefaultSeatType(rowLetter, no, cols) };
+                    next[key] = prev[key] ?? {
+                        type: getDefaultSeatType(rowLetter, no, cols),
+                        status: 'ACTIVE',
+                    };
                 }
             });
             return next;
@@ -161,37 +184,67 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
 
     const handleSeatClick = (rowLetter: string, seatNo: number) => {
         const key = seatKey(rowLetter, seatNo);
-        const current = seatTypes[key] ?? { type: getDefaultSeatType(rowLetter, seatNo, cols) };
+        const current = seatTypes[key] ?? {
+            type: getDefaultSeatType(rowLetter, seatNo, cols),
+            status: 'ACTIVE' as SeatStatusType,
+        };
 
-        const isLastSeatOfOddRow = cols % 2 !== 0 && seatNo === cols;
-        if (activeType === 'SWEETBOX' && isLastSeatOfOddRow) {
-            message.warning(
-                `A seat ${rowLetter}${seatNo} is last seat in row, cannot set this seat is sweetbox!`,
-            );
+        // ── Editing seat TYPE (existing behaviour) ──
+        if (editMode === 'TYPE') {
+            const isLastSeatOfOddRow = cols % 2 !== 0 && seatNo === cols;
+            if (activeType === 'SWEETBOX' && isLastSeatOfOddRow) {
+                message.warning(
+                    `A seat ${rowLetter}${seatNo} is last seat in row, cannot set this seat is sweetbox!`,
+                );
+                return;
+            }
+
+            setSeatTypes((prev) => {
+                const next = { ...prev };
+                const partnerNo = pairSeatNo(seatNo);
+                const hasValidPartner = partnerNo >= 1 && partnerNo <= cols;
+                const partnerKey = hasValidPartner ? seatKey(rowLetter, partnerNo) : null;
+                const partnerCurrent = partnerKey
+                    ? prev[partnerKey] ?? {
+                    type: getDefaultSeatType(rowLetter, partnerNo, cols),
+                    status: 'ACTIVE' as SeatStatusType,
+                }
+                    : null;
+
+                next[key] = { ...current, type: activeType };
+
+                if (activeType === 'SWEETBOX') {
+                    if (partnerKey && partnerCurrent) {
+                        next[partnerKey] = { ...partnerCurrent, type: activeType };
+                    }
+                } else if (
+                    current.type === 'SWEETBOX' &&
+                    partnerKey &&
+                    partnerCurrent?.type === 'SWEETBOX'
+                ) {
+                    next[partnerKey] = { ...partnerCurrent, type: activeType };
+                }
+
+                return next;
+            });
             return;
         }
 
+        // ── Editing seat STATUS (Active / Maintenance) ──
         setSeatTypes((prev) => {
             const next = { ...prev };
-            const partnerNo = pairSeatNo(seatNo);
-            const hasValidPartner = partnerNo >= 1 && partnerNo <= cols;
-            const partnerKey = hasValidPartner ? seatKey(rowLetter, partnerNo) : null;
-            const partnerCurrent = partnerKey
-                ? prev[partnerKey] ?? { type: getDefaultSeatType(rowLetter, partnerNo, cols) }
-                : null;
+            next[key] = { ...current, status: activeStatus };
 
-            next[key] = { ...current, type: activeType };
-
-            if (activeType === 'SWEETBOX') {
-                if (partnerKey && partnerCurrent) {
-                    next[partnerKey] = { ...partnerCurrent, type: activeType };
+            // A sweetbox is a single physical couple-seat, so its paired half
+            // should follow the same status (both usable or both under maintenance).
+            if (current.type === 'SWEETBOX') {
+                const partnerNo = pairSeatNo(seatNo);
+                const hasValidPartner = partnerNo >= 1 && partnerNo <= cols;
+                const partnerKey = hasValidPartner ? seatKey(rowLetter, partnerNo) : null;
+                const partnerCurrent = partnerKey ? prev[partnerKey] : null;
+                if (partnerKey && partnerCurrent?.type === 'SWEETBOX') {
+                    next[partnerKey] = { ...partnerCurrent, status: activeStatus };
                 }
-            } else if (
-                current.type === 'SWEETBOX' &&
-                partnerKey &&
-                partnerCurrent?.type === 'SWEETBOX'
-            ) {
-                next[partnerKey] = { ...partnerCurrent, type: activeType };
             }
 
             return next;
@@ -203,7 +256,11 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
         rowLetters.forEach((rowLetter) => {
             for (let no = 1; no <= cols; no++) {
                 const key = seatKey(rowLetter, no);
-                next[key] = { id: seatTypes[key]?.id, type: getDefaultSeatType(rowLetter, no, cols) };
+                next[key] = {
+                    id: seatTypes[key]?.id,
+                    type: getDefaultSeatType(rowLetter, no, cols),
+                    status: 'ACTIVE',
+                };
             }
         });
         setSeatTypes(next);
@@ -226,6 +283,7 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                     seatRow: rowLetter,
                     seatNo: no,
                     type: cell?.type ?? getDefaultSeatType(rowLetter, no, cols),
+                    status: cell?.status ?? 'ACTIVE',
                 });
             }
         });
@@ -273,8 +331,9 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                 <Spin spinning={fetching}>
                     <div style={{ padding: 24, maxWidth: 1000, margin: '0 auto' }}>
                         <Text type="secondary" style={{ display: 'block', marginBottom: 24 }}>
-                            Update room information and seating chart. Click on a seat to assign the selected seat type.
-                            Sweetboxes are automatically paired (A1 ↔ A2, A3 ↔ A4, …).
+                            Update room information and seating chart. Choose what you want to edit
+                            (seat type or seat status), then click a seat to apply it. Sweetboxes are
+                            automatically paired (A1 ↔ A2, A3 ↔ A4, …).
                         </Text>
 
                         <Row gutter={24}>
@@ -442,41 +501,87 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                                         <Text type="secondary">Loading seating chart...</Text>
                                     ) : (
                                         <div style={{ overflowX: 'auto' }}>
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 10,
-                                                    marginBottom: 16,
-                                                }}
-                                            >
-                                                <Text style={{ whiteSpace: 'nowrap' }}>Seat type choosing:</Text>
-                                                <Select
-                                                    value={activeType}
-                                                    onChange={(value: SeatTypeType) => setActiveType(value)}
-                                                    style={{ minWidth: 180 }}
-                                                >
-                                                    {Object.entries(SEAT_TYPE_LABELS).map(([key, label]) => (
-                                                        <Option key={key} value={key}>
-                                                            <Space size={6}>
-                                                            <span
-                                                                style={{
-                                                                    display: 'inline-block',
-                                                                    width: 10,
-                                                                    height: 10,
-                                                                    borderRadius: 2,
-                                                                    background: seatColor[key],
-                                                                }}
-                                                            />
-                                                                {label}
-                                                            </Space>
-                                                        </Option>
-                                                    ))}
-                                                </Select>
-                                                <Text type="secondary" style={{ fontSize: 12 }}>
-                                                    Click seat for this type
-                                                </Text>
+                                            {/* Edit mode switch: seat TYPE vs seat STATUS */}
+                                            <div style={{ marginBottom: 12 }}>
+                                                <Segmented
+                                                    value={editMode}
+                                                    onChange={(value) => setEditMode(value as EditMode)}
+                                                    options={[
+                                                        { label: 'Edit seat type', value: 'TYPE' },
+                                                        { label: 'Edit seat status', value: 'STATUS' },
+                                                    ]}
+                                                />
                                             </div>
+
+                                            {editMode === 'TYPE' ? (
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 10,
+                                                        marginBottom: 16,
+                                                    }}
+                                                >
+                                                    <Text style={{ whiteSpace: 'nowrap' }}>Seat type choosing:</Text>
+                                                    <Select
+                                                        value={activeType}
+                                                        onChange={(value: SeatTypeType) => setActiveType(value)}
+                                                        style={{ minWidth: 180 }}
+                                                    >
+                                                        {Object.entries(SEAT_TYPE_LABELS).map(([key, label]) => (
+                                                            <Option key={key} value={key}>
+                                                                <Space size={6}>
+                                                                <span
+                                                                    style={{
+                                                                        display: 'inline-block',
+                                                                        width: 10,
+                                                                        height: 10,
+                                                                        borderRadius: 2,
+                                                                        background: seatColor[key],
+                                                                    }}
+                                                                />
+                                                                    {label}
+                                                                </Space>
+                                                            </Option>
+                                                        ))}
+                                                    </Select>
+                                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                                        Click seat for this type
+                                                    </Text>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 10,
+                                                        marginBottom: 16,
+                                                    }}
+                                                >
+                                                    <Text style={{ whiteSpace: 'nowrap' }}>Set status to:</Text>
+                                                    <Select
+                                                        value={activeStatus}
+                                                        onChange={(value: SeatStatusType) => setActiveStatus(value)}
+                                                        style={{ minWidth: 180 }}
+                                                    >
+                                                        {Object.entries(SEAT_STATUS_LABELS).map(([key, label]) => (
+                                                            <Option key={key} value={key}>
+                                                                <Space size={6}>
+                                                                    {key === 'MAINTENANCE' ? (
+                                                                        <ToolOutlined style={{ color: seatStatusColor[key] }} />
+                                                                    ) : (
+                                                                        <CheckCircleOutlined style={{ color: seatStatusColor[key] }} />
+                                                                    )}
+                                                                    {label}
+                                                                </Space>
+                                                            </Option>
+                                                        ))}
+                                                    </Select>
+                                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                                        Click seat to toggle it {SEAT_STATUS_LABELS[activeStatus].toLowerCase()}
+                                                    </Text>
+                                                </div>
+                                            )}
 
                                             <div
                                                 style={{
@@ -512,21 +617,25 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                                                         {Array.from({ length: cols }).map((_, i) => {
                                                             const seatNo = i + 1;
                                                             const key = seatKey(rowLetter, seatNo);
+                                                            const cell = seatTypes[key];
                                                             const cellType =
-                                                                seatTypes[key]?.type ??
-                                                                getDefaultSeatType(rowLetter, seatNo, cols);
-                                                            const isNewSeat = seatTypes[key]?.id == null;
+                                                                cell?.type ?? getDefaultSeatType(rowLetter, seatNo, cols);
+                                                            const cellStatus: SeatStatusType = cell?.status ?? 'ACTIVE';
+                                                            const isNewSeat = cell?.id == null;
+                                                            const isMaintenance = cellStatus === 'MAINTENANCE';
 
                                                             return (
                                                                 <div
                                                                     key={i}
                                                                     onClick={() => handleSeatClick(rowLetter, seatNo)}
-                                                                    title={`${rowLetter}${seatNo} - ${SEAT_TYPE_LABELS[cellType]}${isNewSeat ? ' (new seat)' : ''}`}
+                                                                    title={`${rowLetter}${seatNo} - ${SEAT_TYPE_LABELS[cellType]} - ${SEAT_STATUS_LABELS[cellStatus]}${isNewSeat ? ' (new seat)' : ''}`}
                                                                     style={{
+                                                                        position: 'relative',
                                                                         width: 24,
                                                                         height: 24,
                                                                         borderRadius: 4,
                                                                         background: seatColor[cellType],
+                                                                        opacity: isMaintenance ? 0.4 : 1,
                                                                         fontSize: 9,
                                                                         display: 'flex',
                                                                         alignItems: 'center',
@@ -534,12 +643,27 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                                                                         color: '#333',
                                                                         cursor: 'pointer',
                                                                         userSelect: 'none',
-                                                                        border: isNewSeat
-                                                                            ? '1px dashed #1677ff'
-                                                                            : '1px solid rgba(0,0,0,0.15)',
+                                                                        border: isMaintenance
+                                                                            ? '1.5px solid #ff4d4f'
+                                                                            : isNewSeat
+                                                                                ? '1px dashed #1677ff'
+                                                                                : '1px solid rgba(0,0,0,0.15)',
                                                                     }}
                                                                 >
                                                                     {seatNo}
+                                                                    {isMaintenance && (
+                                                                        <ToolOutlined
+                                                                            style={{
+                                                                                position: 'absolute',
+                                                                                top: -6,
+                                                                                right: -6,
+                                                                                fontSize: 10,
+                                                                                color: '#ff4d4f',
+                                                                                background: '#fff',
+                                                                                borderRadius: '50%',
+                                                                            }}
+                                                                        />
+                                                                    )}
                                                                 </div>
                                                             );
                                                         })}
@@ -563,17 +687,19 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                                                         <Text>{label}</Text>
                                                     </Space>
                                                 ))}
-                                                {/*<Space size={6}>*/}
-                                                {/*    <div*/}
-                                                {/*        style={{*/}
-                                                {/*            width: 16,*/}
-                                                {/*            height: 16,*/}
-                                                {/*            borderRadius: 4,*/}
-                                                {/*            border: '1px dashed #1677ff',*/}
-                                                {/*        }}*/}
-                                                {/*    />*/}
-                                                {/*    <Text>New seat</Text>*/}
-                                                {/*</Space>*/}
+                                                <Space size={6}>
+                                                    <div
+                                                        style={{
+                                                            width: 16,
+                                                            height: 16,
+                                                            borderRadius: 4,
+                                                            background: '#d9d9d9',
+                                                            opacity: 0.4,
+                                                            border: '1.5px solid #ff4d4f',
+                                                        }}
+                                                    />
+                                                    <Text>Maintenance</Text>
+                                                </Space>
                                             </Space>
                                         </div>
                                     )}

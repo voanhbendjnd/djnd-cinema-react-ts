@@ -1,5 +1,5 @@
 // ====== Enums - MUST match backend enum values exactly ======
-// Adjust these if your backend RoomStatus / RoomType / SeatType enums differ
+// Adjust these if your backend RoomStatus / RoomType / SeatType / SeatStatus enums differ
 export const RoomStatus = {
     ACTIVE: 'ACTIVE',
     MAINTENANCE: 'MAINTENANCE',
@@ -22,6 +22,13 @@ export const SeatType = {
 } as const;
 export type SeatTypeType = keyof typeof SeatType;
 
+// NEW: per-seat status (matches backend `SeatStatus { ACTIVE, MAINTENANCE }`)
+export const SeatStatus = {
+    ACTIVE: 'ACTIVE',
+    MAINTENANCE: 'MAINTENANCE',
+} as const;
+export type SeatStatusType = keyof typeof SeatStatus;
+
 export const ROOM_STATUS_LABELS: Record<string, string> = {
     ACTIVE: 'Active',
     MAINTENANCE: 'Maintenance',
@@ -41,6 +48,12 @@ export const SEAT_TYPE_LABELS: Record<string, string> = {
     SWEETBOX: 'Sweetbox (Couple)',
 };
 
+// NEW: labels for seat status
+export const SEAT_STATUS_LABELS: Record<string, string> = {
+    ACTIVE: 'Active',
+    MAINTENANCE: 'Maintenance',
+};
+
 // ====== DTOs ======
 
 export interface RoomDTO {
@@ -58,21 +71,9 @@ export interface SeatDTO {
     seatRow: string;
     seatNo: number;
     type: SeatTypeType | string;
+    // NEW: seat status, sent to server on update. Defaults to ACTIVE when omitted.
+    status?: SeatStatusType | string;
 }
-
-// export interface RoomDetailDTO {
-//     id?: number;
-//     name: string;
-//     status: RoomStatusType | string;
-//     type: RoomTypeType | string;
-//     seats?: SeatDTO[];
-// }
-
-// export interface SeatDTO {
-//     seatRow: string;
-//     seatNo: number;
-//     type?: SeatTypeType;
-// }
 
 export interface RoomDetailDTO extends RoomDTO {
     seats: SeatDTO[];
