@@ -10,10 +10,10 @@ interface ExchangeInfo {
 }
 
 export const useExchangePoints = (
-    startDateTime: string | null | undefined,
+    releaseDate: string | null | undefined,
     price: number | null | undefined
 ): ExchangeInfo => {
-    if (!startDateTime || price == null) {
+    if (!releaseDate || price == null) {
         return {
             canExchange: false,
             reason: 'Invalid ticket data',
@@ -24,9 +24,9 @@ export const useExchangePoints = (
     }
 
     const now = dayjs();
-    const showtime = dayjs(startDateTime);
+    const showtime = dayjs(releaseDate);
     const daysRemaining = showtime.diff(now, 'day', true);
-
+    // console.log(startDateTime)
     // ✅ Check if movie already started
     if (now.isAfter(showtime)) {
         return {

@@ -161,7 +161,7 @@ const TicketListPage = () => {
                   {tickets.map((ticket) => {
                     // eslint-disable-next-line react-hooks/rules-of-hooks
                     const exchange = useExchangePoints(
-                        ticket.startDateTime,
+                        ticket.releaseDate,
                         ticket.price
                     );
 
