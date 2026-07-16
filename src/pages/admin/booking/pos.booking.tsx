@@ -22,7 +22,9 @@ import {
     SearchOutlined,
     PrinterOutlined,
     CheckCircleOutlined,
-    DollarOutlined
+    DollarOutlined,
+    LeftOutlined,
+    RightOutlined,
 } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { Client } from '@stomp/stompjs';
@@ -36,6 +38,10 @@ import enUS from 'antd/locale/en_US';
 
 const { Title } = Typography;
 import 'dayjs/locale/en';
+
+// ✅ Hardcode tên thứ/tháng tiếng Anh, không phụ thuộc dayjs locale
+const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // ─────────────────────────────────────────────────────────────
 // TYPES
@@ -274,10 +280,16 @@ const SeatGrid: React.FC<{
                             {rowSeats.map((seat) => {
                                 const isSelected = selectedSeats.includes(seat.id);
                                 const isSold = seat.bookingStatus === 'SOLD';
-                                const isAvailable = seat.bookingStatus === 'AVAILABLE';
+                                // ✅ Seat marked MAINTENANCE by admin cannot be booked
+                                const isMaintenance = seat.status === 'MAINTENANCE';
+                                const pairSeat = findPairSeat(seat);
+                                // Sweetbox is one physical couple-seat: if the paired half is under
+                                // maintenance, this half can't be booked alone either.
+                                const isPairMaintenance = pairSeat?.status === 'MAINTENANCE';
+                                const isUnavailable = isSold || isMaintenance || isPairMaintenance;
+                                const isAvailable = seat.bookingStatus === 'AVAILABLE' && !isMaintenance && !isPairMaintenance;
                                 const seatConfig = SEAT_TYPE_CONFIG[seat.type] || SEAT_TYPE_CONFIG.STANDARD;
                                 const seatColor = seatConfig.color;
-                                const pairSeat = findPairSeat(seat);
                                 const isPairSelected = pairSeat && selectedSeats.includes(pairSeat.id);
                                 const showGap = seat.type === 'SWEETBOX' && seat.seatNo % 2 === 0;
 
@@ -287,13 +299,17 @@ const SeatGrid: React.FC<{
                                             title={
                                                 isSold
                                                     ? `${seat.seatRow}${seat.seatNo} - SOLD`
-                                                    : seat.type === 'SWEETBOX'
-                                                        ? `${seat.seatRow}${seat.seatNo} - ${seatConfig.label} (Couple Seat) - ${
-                                                            seat.price ? `${seat.price.toLocaleString('vi-VN')}đ` : 'N/A'
-                                                        }${pairSeat ? ` (paired with ${pairSeat.seatRow}${pairSeat.seatNo})` : ''}`
-                                                        : `${seat.seatRow}${seat.seatNo} • ${seatConfig.label} • ${
-                                                            seat.price ? `${seat.price.toLocaleString('vi-VN')}đ` : 'N/A'
-                                                        }`
+                                                    : isMaintenance
+                                                        ? `${seat.seatRow}${seat.seatNo} - Under maintenance, not available`
+                                                        : isPairMaintenance
+                                                            ? `${seat.seatRow}${seat.seatNo} - Paired seat ${pairSeat?.seatRow}${pairSeat?.seatNo} is under maintenance`
+                                                            : seat.type === 'SWEETBOX'
+                                                                ? `${seat.seatRow}${seat.seatNo} - ${seatConfig.label} (Couple Seat) - ${
+                                                                    seat.price ? `${seat.price.toLocaleString('vi-VN')}đ` : 'N/A'
+                                                                }${pairSeat ? ` (paired with ${pairSeat.seatRow}${pairSeat.seatNo})` : ''}`
+                                                                : `${seat.seatRow}${seat.seatNo} • ${seatConfig.label} • ${
+                                                                    seat.price ? `${seat.price.toLocaleString('vi-VN')}đ` : 'N/A'
+                                                                }`
                                             }
                                             color="#000"
                                         >
@@ -303,27 +319,37 @@ const SeatGrid: React.FC<{
                                                         handleSeatClick(seat);
                                                     }
                                                 }}
-                                                disabled={isSold}
+                                                disabled={isUnavailable}
                                                 style={{
                                                     width: 32,
                                                     height: 32,
                                                     borderRadius: 6,
                                                     border: isSelected
                                                         ? `3px solid ${seatColor}`
-                                                        : isSold
-                                                            ? '1px solid rgba(255,255,255,0.1)'
-                                                            : `2px solid ${seatColor}`,
+                                                        : isMaintenance || isPairMaintenance
+                                                            ? '1px dashed rgba(255,77,79,0.6)'
+                                                            : isSold
+                                                                ? '1px solid rgba(255,255,255,0.1)'
+                                                                : `2px solid ${seatColor}`,
                                                     background: isSelected
                                                         ? seatColor
-                                                        : isSold
-                                                            ? 'rgba(255,255,255,0.08)'
-                                                            : 'transparent',
-                                                    color: isSelected ? '#fff' : isSold ? 'rgba(255,255,255,0.2)' : seatColor,
-                                                    cursor: isSold ? 'not-allowed' : 'pointer',
+                                                        : isMaintenance || isPairMaintenance
+                                                            ? 'rgba(255,77,79,0.08)'
+                                                            : isSold
+                                                                ? 'rgba(255,255,255,0.08)'
+                                                                : 'transparent',
+                                                    color: isSelected
+                                                        ? '#fff'
+                                                        : isMaintenance || isPairMaintenance
+                                                            ? 'rgba(255,77,79,0.6)'
+                                                            : isSold
+                                                                ? 'rgba(255,255,255,0.2)'
+                                                                : seatColor,
+                                                    cursor: isUnavailable ? 'not-allowed' : 'pointer',
                                                     fontSize: 11,
                                                     fontWeight: 700,
                                                     transition: 'all 0.2s ease',
-                                                    opacity: isSold ? 0.3 : 1,
+                                                    opacity: isSold ? 0.3 : isMaintenance || isPairMaintenance ? 0.5 : 1,
                                                     boxShadow: isSelected
                                                         ? `0 0 16px ${seatColor}a0`
                                                         : isPairSelected && seat.type === 'SWEETBOX'
@@ -332,7 +358,7 @@ const SeatGrid: React.FC<{
                                                     flexShrink: 0,
                                                 }}
                                                 onMouseEnter={(e) => {
-                                                    if ((isAvailable || isSelected) && !isSold) {
+                                                    if ((isAvailable || isSelected) && !isUnavailable) {
                                                         const btn = e.currentTarget as HTMLButtonElement;
                                                         if (!isSelected) {
                                                             btn.style.background = `${seatColor}20`;
@@ -341,7 +367,7 @@ const SeatGrid: React.FC<{
                                                     }
                                                 }}
                                                 onMouseLeave={(e) => {
-                                                    if ((isAvailable || isSelected) && !isSold) {
+                                                    if ((isAvailable || isSelected) && !isUnavailable) {
                                                         const btn = e.currentTarget as HTMLButtonElement;
                                                         if (!isSelected) {
                                                             btn.style.background = 'transparent';
@@ -350,7 +376,7 @@ const SeatGrid: React.FC<{
                                                     }
                                                 }}
                                             >
-                                                {seat.seatNo}
+                                                {(isMaintenance || isPairMaintenance) && !isSold ? '🔧' : seat.seatNo}
                                             </button>
                                         </Tooltip>
                                         {showGap && <div style={{ width: 8 }} />}
@@ -384,6 +410,7 @@ export const POSBookingPage: React.FC = () => {
     const [selectedDate, setSelectedDate] = useState<Dayjs>(dateList[0]);
     const [selectedShowtime, setSelectedShowtime] = useState<ShowtimeSchedule | null>(null);
     const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
+    const dateScrollRef = useRef<HTMLDivElement>(null);
 
     // Customer
     const [customerType, setCustomerType] = useState<'member' | 'guest'>('guest');
@@ -407,6 +434,12 @@ export const POSBookingPage: React.FC = () => {
 
     // Ref for printing
     const receiptRef = useRef<HTMLDivElement>(null);
+
+    const scrollDates = (dir: 1 | -1) => {
+        if (dateScrollRef.current) {
+            dateScrollRef.current.scrollBy({ left: dir * 160, behavior: 'smooth' });
+        }
+    };
 
     // Fetch movies on load
     useEffect(() => {
@@ -731,17 +764,97 @@ export const POSBookingPage: React.FC = () => {
 
                                 <div>
                                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>CHOOSE DATE</div>
-                                    <Select
-                                        value={selectedDate.format('YYYY-MM-DD')}
-                                        onChange={(val) => setSelectedDate(dayjs(val))}
-                                        style={{ width: '100%' }}
-                                    >
-                                        {dateList.map(date => (
-                                            <Option key={date.format('YYYY-MM-DD')} value={date.format('YYYY-MM-DD')}>
-                                                {date.format('dddd, MMMM DD, YYYY')} {date.isSame(dayjs(), 'day') ? '(Today)' : ''}
-                                            </Option>
-                                        ))}
-                                    </Select>
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <button
+                                            onClick={() => scrollDates(-1)}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.06)',
+                                                border: '1px solid rgba(255,255,255,0.12)',
+                                                borderRadius: 6,
+                                                color: '#f0ece3',
+                                                width: 28,
+                                                height: 28,
+                                                flexShrink: 0,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                            }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+                                            onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                                        >
+                                            <LeftOutlined style={{ fontSize: 11 }} />
+                                        </button>
+
+                                        <div
+                                            ref={dateScrollRef}
+                                            style={{
+                                                display: 'flex',
+                                                gap: 8,
+                                                overflowX: 'auto',
+                                                scrollbarWidth: 'none',
+                                                padding: '2px 0',
+                                                flex: 1,
+                                            }}
+                                        >
+                                            {dateList.map((d) => {
+                                                const isActive = d.isSame(selectedDate, 'day');
+                                                const isToday = d.isSame(dayjs(), 'day');
+                                                return (
+                                                    <button
+                                                        key={d.format('YYYY-MM-DD')}
+                                                        onClick={() => setSelectedDate(d)}
+                                                        style={{
+                                                            flexShrink: 0,
+                                                            width: 58,
+                                                            padding: '8px 0',
+                                                            borderRadius: 8,
+                                                            cursor: 'pointer',
+                                                            background: isActive ? '#e63946' : 'rgba(255,255,255,0.04)',
+                                                            border: isActive
+                                                                ? '1px solid #e63946'
+                                                                : '1px solid rgba(255,255,255,0.1)',
+                                                            color: isActive ? '#fff' : 'rgba(255,255,255,0.7)',
+                                                            transition: 'all 0.15s',
+                                                        }}
+                                                    >
+                                                        <div style={{ fontSize: 10, letterSpacing: 1, opacity: 0.85 }}>
+                                                            {WEEKDAY_SHORT[d.day()].toUpperCase()}
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                fontSize: 18,
+                                                                fontFamily: "'Bebas Neue', sans-serif",
+                                                                lineHeight: 1.2,
+                                                            }}
+                                                        >
+                                                            {d.format('DD')}
+                                                        </div>
+                                                        <div style={{ fontSize: 9, opacity: 0.7 }}>
+                                                            {isToday ? 'TODAY' : MONTH_SHORT[d.month()]}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <button
+                                            onClick={() => scrollDates(1)}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.06)',
+                                                border: '1px solid rgba(255,255,255,0.12)',
+                                                borderRadius: 6,
+                                                color: '#f0ece3',
+                                                width: 28,
+                                                height: 28,
+                                                flexShrink: 0,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                            }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+                                            onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                                        >
+                                            <RightOutlined style={{ fontSize: 11 }} />
+                                        </button>
+                                    </div>
                                 </div>
                             </Space>
                         </Card>

@@ -280,10 +280,16 @@ const SeatGrid: React.FC<{
                             {rowSeats.map((seat) => {
                                 const isSelected = selectedSeats.includes(seat.id);
                                 const isSold = seat.bookingStatus === 'SOLD';
-                                const isAvailable = seat.bookingStatus === 'AVAILABLE';
+                                // ✅ Seat marked MAINTENANCE by admin cannot be booked
+                                const isMaintenance = seat.status === 'MAINTENANCE';
+                                const pairSeat = findPairSeat(seat);
+                                // Sweetbox is one physical couple-seat: if the paired half is under
+                                // maintenance, this half can't be booked alone either.
+                                const isPairMaintenance = pairSeat?.status === 'MAINTENANCE';
+                                const isUnavailable = isSold || isMaintenance || isPairMaintenance;
+                                const isAvailable = seat.bookingStatus === 'AVAILABLE' && !isMaintenance && !isPairMaintenance;
                                 const seatConfig = SEAT_TYPE_CONFIG[seat.type] || SEAT_TYPE_CONFIG.STANDARD;
                                 const seatColor = seatConfig.color;
-                                const pairSeat = findPairSeat(seat);
                                 const isPairSelected = pairSeat && selectedSeats.includes(pairSeat.id);
 
                                 // ✅ Fix: Gap chỉ sau ghế chẵn của SWEETBOX
@@ -295,13 +301,17 @@ const SeatGrid: React.FC<{
                                             title={
                                                 isSold
                                                     ? `${seat.seatRow}${seat.seatNo} - SOLD`
-                                                    : seat.type === 'SWEETBOX'
-                                                        ? `${seat.seatRow}${seat.seatNo} - ${seatConfig.label} (Couple Seat) - ${
-                                                            seat.price ? `${seat.price.toLocaleString('vi-VN')}đ` : 'N/A'
-                                                        }${pairSeat ? ` (paired with ${pairSeat.seatRow}${pairSeat.seatNo})` : ''}`
-                                                        : `${seat.seatRow}${seat.seatNo} • ${seatConfig.label} • ${
-                                                            seat.price ? `${seat.price.toLocaleString('vi-VN')}đ` : 'N/A'
-                                                        }`
+                                                    : isMaintenance
+                                                        ? `${seat.seatRow}${seat.seatNo} - Under maintenance, not available`
+                                                        : isPairMaintenance
+                                                            ? `${seat.seatRow}${seat.seatNo} - Paired seat ${pairSeat?.seatRow}${pairSeat?.seatNo} is under maintenance`
+                                                            : seat.type === 'SWEETBOX'
+                                                                ? `${seat.seatRow}${seat.seatNo} - ${seatConfig.label} (Couple Seat) - ${
+                                                                    seat.price ? `${seat.price.toLocaleString('vi-VN')}đ` : 'N/A'
+                                                                }${pairSeat ? ` (paired with ${pairSeat.seatRow}${pairSeat.seatNo})` : ''}`
+                                                                : `${seat.seatRow}${seat.seatNo} • ${seatConfig.label} • ${
+                                                                    seat.price ? `${seat.price.toLocaleString('vi-VN')}đ` : 'N/A'
+                                                                }`
                                             }
                                             color="#000"
                                         >
@@ -311,36 +321,47 @@ const SeatGrid: React.FC<{
                                                         handleSeatClick(seat);
                                                     }
                                                 }}
-                                                disabled={isSold}
+                                                disabled={isUnavailable}
                                                 style={{
                                                     width: 36,
                                                     height: 36,
                                                     borderRadius: 6,
                                                     border: isSelected
                                                         ? `3px solid ${seatColor}`
-                                                        : isSold
-                                                            ? '1px solid rgba(255,255,255,0.1)'
-                                                            : `2px solid ${seatColor}`,
+                                                        : isMaintenance || isPairMaintenance
+                                                            ? '1px dashed rgba(255,77,79,0.6)'
+                                                            : isSold
+                                                                ? '1px solid rgba(255,255,255,0.1)'
+                                                                : `2px solid ${seatColor}`,
                                                     background: isSelected
                                                         ? seatColor
-                                                        : isSold
-                                                            ? 'rgba(255,255,255,0.08)'
-                                                            : 'transparent',
-                                                    color: isSelected ? '#fff' : isSold ? 'rgba(255,255,255,0.3)' : seatColor,
-                                                    cursor: isSold ? 'not-allowed' : 'pointer',
+                                                        : isMaintenance || isPairMaintenance
+                                                            ? 'rgba(255,77,79,0.08)'
+                                                            : isSold
+                                                                ? 'rgba(255,255,255,0.08)'
+                                                                : 'transparent',
+                                                    color: isSelected
+                                                        ? '#fff'
+                                                        : isMaintenance || isPairMaintenance
+                                                            ? 'rgba(255,77,79,0.6)'
+                                                            : isSold
+                                                                ? 'rgba(255,255,255,0.3)'
+                                                                : seatColor,
+                                                    cursor: isUnavailable ? 'not-allowed' : 'pointer',
                                                     fontSize: 12,
                                                     fontWeight: 700,
                                                     transition: 'all 0.2s ease',
-                                                    opacity: isSold ? 0.4 : 1,
+                                                    opacity: isSold ? 0.4 : isMaintenance || isPairMaintenance ? 0.55 : 1,
                                                     boxShadow: isSelected
                                                         ? `0 0 16px ${seatColor}a0, inset 0 0 8px ${seatColor}40`
                                                         : isPairSelected && seat.type === 'SWEETBOX'
                                                             ? `0 0 12px ${seatColor}40`
                                                             : 'none',
                                                     flexShrink: 0,
+                                                    position: 'relative',
                                                 }}
                                                 onMouseEnter={(e) => {
-                                                    if ((isAvailable || isSelected) && !isSold) {
+                                                    if ((isAvailable || isSelected) && !isUnavailable) {
                                                         const btn = e.currentTarget as HTMLButtonElement;
                                                         if (!isSelected) {
                                                             btn.style.background = `${seatColor}20`;
@@ -350,7 +371,7 @@ const SeatGrid: React.FC<{
                                                     }
                                                 }}
                                                 onMouseLeave={(e) => {
-                                                    if ((isAvailable || isSelected) && !isSold) {
+                                                    if ((isAvailable || isSelected) && !isUnavailable) {
                                                         const btn = e.currentTarget as HTMLButtonElement;
                                                         if (!isSelected) {
                                                             btn.style.background = 'transparent';
@@ -362,7 +383,7 @@ const SeatGrid: React.FC<{
                                                     }
                                                 }}
                                             >
-                                                {seat.seatNo}
+                                                {(isMaintenance || isPairMaintenance) && !isSold ? '🔧' : seat.seatNo}
                                             </button>
                                         </Tooltip>
                                         {/* ✅ Gap sau ghế chẵn của SWEETBOX */}
@@ -432,6 +453,7 @@ const SeatGrid: React.FC<{
                         <div>✓ Sweet Box seats are paired - selecting/deselecting one affects both</div>
                         <div>✓ Seats must be consecutive (no gaps allowed)</div>
                         <div>✓ Example: Can't book C17 + C19 without C18</div>
+                        <div>🔧 Seats marked with a wrench are under maintenance and cannot be booked</div>
                     </div>
                 </div>
             </div>
@@ -1365,7 +1387,7 @@ export const BookingModal: React.FC<{
                                     }}
                                     icon={<StarFilled />}
                                 >
-                                    {booking ? 'Đang xử lý...' : 'Submit'}
+                                    {booking ? 'Processing...' : 'Submit'}
                                 </Button>
                             )}
                         </div>
