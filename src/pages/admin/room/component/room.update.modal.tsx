@@ -16,6 +16,7 @@ import {
     Modal,
     Spin, notification,
     Segmented,
+    DatePicker
 } from 'antd';
 import { SaveOutlined, ReloadOutlined, ToolOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import {
@@ -28,9 +29,11 @@ import {
 } from '@/types/room.types.ts';
 import type { RoomDetailDTO, SeatDTO, SeatTypeType, SeatStatusType } from '@/types/room.types.ts';
 import { roomService } from '@/services/room.service.ts';
+import dayjs from 'dayjs';
 
 const { Text } = Typography;
 const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 const MAX_ROWS = 10;
 const MAX_COLS = 30;
@@ -80,8 +83,10 @@ interface RoomUpdateModalProps {
 
 const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose, onSuccess }) => {
     const [form] = Form.useForm();
+    const [mForm] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
+    const [mLoading, setMLoading] = useState(false);
 
     const totalRows = Form.useWatch('totalRows', form);
     const totalCols = Form.useWatch('totalCols', form);
@@ -91,6 +96,7 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
     const [activeType, setActiveType] = useState<SeatTypeType>('STANDARD');
     const [activeStatus, setActiveStatus] = useState<SeatStatusType>('MAINTENANCE');
     const [seatTypes, setSeatTypes] = useState<Record<string, SeatCell>>({});
+    const [mModal, setMModal] = useState<{ open: boolean; seatId?: number; key?: string }>({ open: false });
     const [api, contextHolder] = notification.useNotification();
 
     const rows = Number(totalRows) || 0;
@@ -231,6 +237,15 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
         }
 
         // ── Editing seat STATUS (Active / Maintenance) ──
+        if (activeStatus === 'MAINTENANCE' && current.status !== 'MAINTENANCE') {
+            if (!current.id) {
+                message.error("Please save the room first before putting new seat into maintenance.");
+                return;
+            }
+            setMModal({ open: true, seatId: current.id, key });
+            return;
+        }
+
         setSeatTypes((prev) => {
             const next = { ...prev };
             next[key] = { ...current, status: activeStatus };
@@ -249,6 +264,41 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
 
             return next;
         });
+    };
+
+    const handleMaintenanceSubmit = async (values: any) => {
+        if (!mModal.seatId) return;
+        setMLoading(true);
+        try {
+            await roomService.maintenanceSeat({
+                seatId: mModal.seatId,
+                startTime: values.range[0].format('YYYY-MM-DDTHH:mm:ss'),
+                endTime: values.range[1].format('YYYY-MM-DDTHH:mm:ss'),
+                reason: values.reason,
+            });
+            message.success('Maintenance scheduled');
+            setSeatTypes(prev => ({ ...prev, [mModal.key!]: { ...prev[mModal.key!], status: 'MAINTENANCE' } }));
+            
+            // if SWEETBOX, set partner to maintenance too
+            const current = seatTypes[mModal.key!];
+            if (current?.type === 'SWEETBOX') {
+                const parts = mModal.key!.split('-');
+                const rowLetter = parts[0];
+                const seatNo = parseInt(parts[1], 10);
+                const partnerNo = pairSeatNo(seatNo);
+                const partnerKey = seatKey(rowLetter, partnerNo);
+                if (seatTypes[partnerKey]?.type === 'SWEETBOX') {
+                     setSeatTypes(prev => ({ ...prev, [partnerKey]: { ...prev[partnerKey], status: 'MAINTENANCE' } }));
+                }
+            }
+
+            setMModal({ open: false });
+            mForm.resetFields();
+        } catch (e: any) {
+            message.error(e.response?.data?.message || 'Failed to add maintenance');
+        } finally {
+            setMLoading(false);
+        }
     };
 
     const handleResetDefaults = () => {
@@ -320,6 +370,17 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
     return (
         <>
             {contextHolder}
+            <Modal title="Schedule Maintenance" open={mModal.open} onCancel={() => setMModal({ open: false })} footer={null} destroyOnClose>
+                <Form form={mForm} layout="vertical" onFinish={handleMaintenanceSubmit}>
+                    <Form.Item name="range" label="Maintenance duration" rules={[{ required: true, message: 'Please select duration' }]}>
+                        <RangePicker showTime style={{ width: '100%' }} format="YYYY-MM-DD HH:mm:ss" />
+                    </Form.Item>
+                    <Form.Item name="reason" label="Reason" rules={[{ required: true, message: 'Please enter a reason' }]}>
+                        <Input.TextArea rows={3} placeholder="Reason for maintenance" />
+                    </Form.Item>
+                    <Button type="primary" htmlType="submit" loading={mLoading} block>Confirm</Button>
+                </Form>
+            </Modal>
             <Modal
                 title="Update room"
                 open={open}

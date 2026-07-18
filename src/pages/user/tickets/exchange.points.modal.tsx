@@ -24,7 +24,7 @@ export const ExchangePointsModal: React.FC<ExchangePointsModalProps> = ({
 
     if (!ticket) return null;
 
-    const exchange = useExchangePoints(ticket.startDateTime, ticket.price);
+    const exchange = useExchangePoints(ticket.showtime, ticket.price);
 
     // ✅ Handle exchange function
     const handleExchange = async () => {

@@ -97,6 +97,7 @@ export interface ShowTimeResponse {
     id: number;
     startDateTime: string;  // ISO 8601: "2025-09-14T10:30:00"
     endDateTime: string;
+    showtime:string;
     roomId: number;
     roomName: string,
     roomType: RoomType;

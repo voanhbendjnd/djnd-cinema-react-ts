@@ -1,6 +1,13 @@
 import axiosClient from './axiosClient'; // adjust to your axios instance path
 import type { RoomDTO, RoomDetailDTO } from '../types/room.types';
 
+export interface SeatMaintenancePayload {
+    seatId: number;
+    startTime: string; // ISO LocalDateTime string, e.g. "2025-01-15T08:00:00"
+    endTime: string;
+    reason?: string;
+}
+
 export const roomService = {
     fetchAllWithPagination: (q: string, page: number, size: number) => {
         return axiosClient.get<IBackendRes<IModelPaginate<RoomDTO>>>('/api/v1/admin/rooms', {
@@ -23,5 +30,10 @@ export const roomService = {
     },
     deleteRoom: async (id: number | undefined) => {
         return axiosClient.delete(`/api/v1/admin/rooms/${id}`);
-    }
+    },
+
+    /** Schedule a seat for maintenance via POST /api/v1/maintenance */
+    maintenanceSeat: (payload: SeatMaintenancePayload) => {
+        return axiosClient.post<void>('/api/v1/maintenance', payload);
+    },
 };
