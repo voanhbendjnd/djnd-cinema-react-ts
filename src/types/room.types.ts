@@ -6,6 +6,11 @@ export const RoomStatus = {
     INACTIVE: 'INACTIVE',
 } as const;
 export type RoomStatusType = keyof typeof RoomStatus;
+export interface SeatMaintenanceDTO {
+    reason: string;
+    startTime: string; // ISO datetime
+    endTime: string; // ISO datetime
+}
 
 export const RoomType = {
     R2D:'R2D',
@@ -73,6 +78,8 @@ export interface SeatDTO {
     type: SeatTypeType | string;
     // NEW: seat status, sent to server on update. Defaults to ACTIVE when omitted.
     status?: SeatStatusType | string;
+    seatMaintenances?: SeatMaintenanceDTO[] | null;
+
 }
 
 export interface RoomDetailDTO extends RoomDTO {

@@ -16,9 +16,12 @@ import {
     Modal,
     Spin, notification,
     Segmented,
-    DatePicker
+    DatePicker,
+    List,
+    Tag,
+    Empty,
 } from 'antd';
-import { SaveOutlined, ReloadOutlined, ToolOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { SaveOutlined, ReloadOutlined, ToolOutlined, CheckCircleOutlined, HistoryOutlined, PlusOutlined } from '@ant-design/icons';
 import {
     RoomStatus,
     RoomType,
@@ -27,7 +30,7 @@ import {
     SEAT_TYPE_LABELS,
     SEAT_STATUS_LABELS,
 } from '@/types/room.types.ts';
-import type { RoomDetailDTO, SeatDTO, SeatTypeType, SeatStatusType } from '@/types/room.types.ts';
+import type { RoomDetailDTO, SeatDTO, SeatTypeType, SeatStatusType, SeatMaintenanceDTO } from '@/types/room.types.ts';
 import { roomService } from '@/services/room.service.ts';
 import dayjs from 'dayjs';
 
@@ -72,6 +75,7 @@ interface SeatCell {
     id?: number;
     type: SeatTypeType;
     status: SeatStatusType;
+    maintenances?: SeatMaintenanceDTO[];
 }
 
 interface RoomUpdateModalProps {
@@ -97,6 +101,7 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
     const [activeStatus, setActiveStatus] = useState<SeatStatusType>('MAINTENANCE');
     const [seatTypes, setSeatTypes] = useState<Record<string, SeatCell>>({});
     const [mModal, setMModal] = useState<{ open: boolean; seatId?: number; key?: string }>({ open: false });
+    const [historyModal, setHistoryModal] = useState<{ open: boolean; key?: string }>({ open: false });
     const [api, contextHolder] = notification.useNotification();
 
     const rows = Number(totalRows) || 0;
@@ -139,6 +144,7 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                         id: s.id,
                         type: s.type as SeatTypeType,
                         status: (s.status as SeatStatusType) ?? 'ACTIVE',
+                        maintenances: s.seatMaintenances ?? [],
                     };
                 });
                 setSeatTypes(map);
@@ -270,27 +276,48 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
         if (!mModal.seatId) return;
         setMLoading(true);
         try {
+            const startTime = values.range[0].format('YYYY-MM-DDTHH:mm:ss');
+            const endTime = values.range[1].format('YYYY-MM-DDTHH:mm:ss');
             await roomService.maintenanceSeat({
                 seatId: mModal.seatId,
-                startTime: values.range[0].format('YYYY-MM-DDTHH:mm:ss'),
-                endTime: values.range[1].format('YYYY-MM-DDTHH:mm:ss'),
+                startTime,
+                endTime,
                 reason: values.reason,
             });
             message.success('Maintenance scheduled');
-            setSeatTypes(prev => ({ ...prev, [mModal.key!]: { ...prev[mModal.key!], status: 'MAINTENANCE' } }));
-            
-            // if SWEETBOX, set partner to maintenance too
-            const current = seatTypes[mModal.key!];
-            if (current?.type === 'SWEETBOX') {
-                const parts = mModal.key!.split('-');
-                const rowLetter = parts[0];
-                const seatNo = parseInt(parts[1], 10);
-                const partnerNo = pairSeatNo(seatNo);
-                const partnerKey = seatKey(rowLetter, partnerNo);
-                if (seatTypes[partnerKey]?.type === 'SWEETBOX') {
-                     setSeatTypes(prev => ({ ...prev, [partnerKey]: { ...prev[partnerKey], status: 'MAINTENANCE' } }));
+
+            const newRecord: SeatMaintenanceDTO = { reason: values.reason, startTime, endTime };
+
+            setSeatTypes(prev => {
+                const current = prev[mModal.key!];
+                const next = {
+                    ...prev,
+                    [mModal.key!]: {
+                        ...current,
+                        status: 'MAINTENANCE' as SeatStatusType,
+                        maintenances: [...(current?.maintenances ?? []), newRecord],
+                    },
+                };
+
+                // if SWEETBOX, set partner to maintenance too (and record the same history entry)
+                if (current?.type === 'SWEETBOX') {
+                    const parts = mModal.key!.split('-');
+                    const rowLetter = parts[0];
+                    const seatNo = parseInt(parts[1], 10);
+                    const partnerNo = pairSeatNo(seatNo);
+                    const partnerKey = seatKey(rowLetter, partnerNo);
+                    const partnerCurrent = prev[partnerKey];
+                    if (partnerCurrent?.type === 'SWEETBOX') {
+                        next[partnerKey] = {
+                            ...partnerCurrent,
+                            status: 'MAINTENANCE' as SeatStatusType,
+                            maintenances: [...(partnerCurrent.maintenances ?? []), newRecord],
+                        };
+                    }
                 }
-            }
+
+                return next;
+            });
 
             setMModal({ open: false });
             mForm.resetFields();
@@ -310,6 +337,7 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                     id: seatTypes[key]?.id,
                     type: getDefaultSeatType(rowLetter, no, cols),
                     status: 'ACTIVE',
+                    maintenances: seatTypes[key]?.maintenances,
                 };
             }
         });
@@ -380,6 +408,69 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                     </Form.Item>
                     <Button type="primary" htmlType="submit" loading={mLoading} block>Confirm</Button>
                 </Form>
+            </Modal>
+            <Modal
+                title={historyModal.key ? `Maintenance history — ${historyModal.key.replace('-', '')}` : 'Maintenance history'}
+                open={historyModal.open}
+                onCancel={() => setHistoryModal({ open: false })}
+                footer={[
+                    <Button
+                        key="add"
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={() => {
+                            const key = historyModal.key!;
+                            const seatId = seatTypes[key]?.id;
+                            setHistoryModal({ open: false });
+                            if (seatId) {
+                                setMModal({ open: true, seatId, key });
+                            }
+                        }}
+                    >
+                        Schedule new maintenance
+                    </Button>,
+                    <Button key="close" onClick={() => setHistoryModal({ open: false })}>
+                        Close
+                    </Button>,
+                ]}
+                destroyOnClose
+            >
+                {(() => {
+                    const records = (historyModal.key ? seatTypes[historyModal.key]?.maintenances : []) ?? [];
+                    if (records.length === 0) {
+                        return <Empty description="No maintenance records for this seat" />;
+                    }
+                    const now = dayjs();
+                    const sorted = [...records].sort((a, b) => dayjs(b.startTime).valueOf() - dayjs(a.startTime).valueOf());
+                    return (
+                        <List
+                            dataSource={sorted}
+                            renderItem={(item) => {
+                                const start = dayjs(item.startTime);
+                                const end = dayjs(item.endTime);
+                                let statusTag = <Tag color="default">Completed</Tag>;
+                                if (now.isBefore(start)) {
+                                    statusTag = <Tag color="blue">Upcoming</Tag>;
+                                } else if (now.isAfter(start) && now.isBefore(end)) {
+                                    statusTag = <Tag color="red">Ongoing</Tag>;
+                                }
+                                return (
+                                    <List.Item>
+                                        <div style={{ width: '100%' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                                <Text strong>
+                                                    {start.format('DD/MM/YYYY HH:mm')} → {end.format('DD/MM/YYYY HH:mm')}
+                                                </Text>
+                                                {statusTag}
+                                            </div>
+                                            <Text type="secondary">{item.reason}</Text>
+                                        </div>
+                                    </List.Item>
+                                );
+                            }}
+                        />
+                    );
+                })()}
             </Modal>
             <Modal
                 title="Update room"
@@ -684,12 +775,14 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                                                             const cellStatus: SeatStatusType = cell?.status ?? 'ACTIVE';
                                                             const isNewSeat = cell?.id == null;
                                                             const isMaintenance = cellStatus === 'MAINTENANCE';
+                                                            const maintenances = cell?.maintenances ?? [];
+                                                            const hasMaintenanceHistory = maintenances.length > 0;
 
                                                             return (
                                                                 <div
                                                                     key={i}
                                                                     onClick={() => handleSeatClick(rowLetter, seatNo)}
-                                                                    title={`${rowLetter}${seatNo} - ${SEAT_TYPE_LABELS[cellType]} - ${SEAT_STATUS_LABELS[cellStatus]}${isNewSeat ? ' (new seat)' : ''}`}
+                                                                    title={`${rowLetter}${seatNo} - ${SEAT_TYPE_LABELS[cellType]} - ${SEAT_STATUS_LABELS[cellStatus]}${isNewSeat ? ' (new seat)' : ''}${hasMaintenanceHistory ? ` — ${maintenances.length} maintenance record(s), click the clock icon for details` : ''}`}
                                                                     style={{
                                                                         position: 'relative',
                                                                         width: 24,
@@ -724,6 +817,31 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                                                                                 borderRadius: '50%',
                                                                             }}
                                                                         />
+                                                                    )}
+                                                                    {hasMaintenanceHistory && (
+                                                                        <span
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setHistoryModal({ open: true, key });
+                                                                            }}
+                                                                            title="View maintenance history"
+                                                                            style={{
+                                                                                position: 'absolute',
+                                                                                top: -6,
+                                                                                left: -6,
+                                                                                width: 12,
+                                                                                height: 12,
+                                                                                borderRadius: '50%',
+                                                                                background: '#fff',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                boxShadow: '0 0 0 1px rgba(0,0,0,0.15)',
+                                                                                cursor: 'pointer',
+                                                                            }}
+                                                                        >
+                                                                            <HistoryOutlined style={{ fontSize: 9, color: '#1677ff' }} />
+                                                                        </span>
                                                                     )}
                                                                 </div>
                                                             );
@@ -760,6 +878,23 @@ const RoomUpdateForm: React.FC<RoomUpdateModalProps> = ({ open, roomId, onClose,
                                                         }}
                                                     />
                                                     <Text>Maintenance</Text>
+                                                </Space>
+                                                <Space size={6}>
+                                                    <div
+                                                        style={{
+                                                            width: 16,
+                                                            height: 16,
+                                                            borderRadius: '50%',
+                                                            background: '#fff',
+                                                            border: '1px solid rgba(0,0,0,0.15)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                        }}
+                                                    >
+                                                        <HistoryOutlined style={{ fontSize: 10, color: '#1677ff' }} />
+                                                    </div>
+                                                    <Text>Has maintenance history (click to view)</Text>
                                                 </Space>
                                             </Space>
                                         </div>
