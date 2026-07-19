@@ -1,0 +1,37 @@
+/* Dark theme overrides for the antd Table used on the Sales Statistics dashboard.
+   Follows the same per-page override pattern as pos-radio.css / auth.css. */
+
+.stats-table .ant-table {
+    background: transparent;
+    color: #f0ece3;
+}
+
+.stats-table .ant-table-thead > tr > th {
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.45);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 11px;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.stats-table .ant-table-thead > tr > th::before {
+    display: none;
+}
+
+.stats-table .ant-table-tbody > tr > td {
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.stats-table .ant-table-tbody > tr:hover > td {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.stats-table .ant-table-tbody > tr:last-child > td {
+    border-bottom: none;
+}
+
+.stats-table .ant-empty-description {
+    color: rgba(255, 255, 255, 0.4);
+}
