@@ -86,7 +86,7 @@ const RoomShowtimeGrid: React.FC<{ days: DayScheduleDTO[] }> = ({ days }) => {
                         {[...day.startTimes]
                             .sort()
                             .map((t) => (
-                                <Tooltip key={t} title="Giờ chiếu">
+                                <Tooltip key={t} title="Showtime">
                                     <Tag
                                         icon={<ClockCircleOutlined />}
                                         color="blue"

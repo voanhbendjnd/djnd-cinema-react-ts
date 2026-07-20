@@ -8,11 +8,14 @@ import {
     Col,
     Table,
     Button,
+    Select,
+    DatePicker,
     Spin,
     Empty,
     notification,
     Typography,
     Tag,
+    Space,
 } from 'antd';
 import enUS from 'antd/locale/en_US';
 import {
@@ -23,6 +26,8 @@ import {
     ArrowUpOutlined,
     ArrowDownOutlined,
     ClockCircleOutlined,
+    FilterOutlined,
+    UndoOutlined,
 } from '@ant-design/icons';
 import {
     ComposedChart,
@@ -34,15 +39,22 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from 'recharts';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import axiosClient from '@/services/axiosClient';
 import '@/styles/stats.table.css'
 const { Title, Text } = Typography;
+const { Option } = Select;
+const { RangePicker } = DatePicker;
 import 'dayjs/locale/en';
 
 const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const WEEKDAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// Default filter range mirrors the backend's own default (fromDate = today-7, toDate = today)
+// used whenever fromDate/toDate query params are omitted.
+const DEFAULT_FROM = dayjs().subtract(7, 'day');
+const DEFAULT_TO = dayjs();
 
 // ─────────────────────────────────────────────────────────────
 // TYPES — mirrors ResStatisticMetricDTO from /admin/statistics/sales-sumary
@@ -63,6 +75,12 @@ interface SalesChartPoint {
 interface StatisticMetricRes {
     todayMetrics: TodayMetrics;
     chartData: SalesChartPoint[];
+}
+
+// Mirrors RoomNameProjection from /api/v1/admin/movies/rooms
+interface RoomOption {
+    id: number;
+    name: string;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -91,6 +109,8 @@ const formatLongDateUpper = (value: string): string => {
     const d = dayjs(value);
     return `${WEEKDAY_LONG[d.day()]}, ${MONTH_SHORT[d.month()]} ${d.format('DD, YYYY')}`.toUpperCase();
 };
+
+const formatDMY = (d: Dayjs): string => `${d.format('DD')} ${MONTH_SHORT[d.month()]} ${d.format('YYYY')}`;
 
 // ─────────────────────────────────────────────────────────────
 // CUSTOM CHART TOOLTIP
@@ -138,10 +158,39 @@ export const StatisticsDashboard: React.FC = () => {
     const [data, setData] = useState<StatisticMetricRes | null>(null);
     const [lastUpdated, setLastUpdated] = useState<dayjs.Dayjs | null>(null);
 
+    // ─── FILTERS ───
+    const [rooms, setRooms] = useState<RoomOption[]>([]);
+    const [roomsLoading, setRoomsLoading] = useState(false);
+    const [selectedRoomId, setSelectedRoomId] = useState<number | undefined>(undefined);
+    const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([DEFAULT_FROM, DEFAULT_TO]);
+
+    // Load the room dropdown once (only ACTIVE rooms, per backend)
+    useEffect(() => {
+        setRoomsLoading(true);
+        axiosClient
+            .get<RoomOption[]>('/api/v1/admin/movies/rooms')
+            .then((res) => {
+                const payload = (res as any)?.data ?? res;
+                setRooms(payload ?? []);
+            })
+            .catch(() => {
+                api.error({ message: 'Failed to load room list', placement: 'topRight' });
+            })
+            .finally(() => setRoomsLoading(false));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const fetchStatistics = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await axiosClient.get<StatisticMetricRes>('/admin/statistics/sales-sumary');
+            const params: Record<string, string | number> = {
+                fromDate: dateRange[0].format('YYYY-MM-DD'),
+                toDate: dateRange[1].format('YYYY-MM-DD'),
+            };
+            if (selectedRoomId != null) {
+                params.roomId = selectedRoomId;
+            }
+            const res = await axiosClient.get<StatisticMetricRes>('/admin/statistics/sales-sumary', { params });
             const payload = (res as any)?.data ?? res;
             setData(payload);
             setLastUpdated(dayjs());
@@ -154,15 +203,27 @@ export const StatisticsDashboard: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [api]);
+    }, [api, dateRange, selectedRoomId]);
 
+    // Re-fetch automatically whenever a filter changes
     useEffect(() => {
         fetchStatistics();
-    }, [fetchStatistics]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dateRange, selectedRoomId]);
+
+    const handleResetFilters = () => {
+        setSelectedRoomId(undefined);
+        setDateRange([DEFAULT_FROM, DEFAULT_TO]);
+    };
+
+    const selectedRoomName = useMemo(() => {
+        if (selectedRoomId == null) return 'All rooms';
+        return rooms.find((r) => r.id === selectedRoomId)?.name ?? 'All rooms';
+    }, [selectedRoomId, rooms]);
 
     const chartData = useMemo(() => data?.chartData ?? [], [data]);
 
-    // Week-over-average trend for today's revenue, computed purely from the 7-day series
+    // Trend for today's revenue vs the average of the other days inside the selected range
     const revenueTrend = useMemo(() => {
         if (!data || chartData.length === 0) return null;
         const today = dayjs().format('YYYY-MM-DD');
@@ -231,7 +292,7 @@ export const StatisticsDashboard: React.FC = () => {
                         alignItems: 'flex-end',
                         flexWrap: 'wrap',
                         gap: 12,
-                        marginBottom: 24,
+                        marginBottom: 20,
                     }}
                 >
                     <div>
@@ -269,6 +330,67 @@ export const StatisticsDashboard: React.FC = () => {
                         </Button>
                     </div>
                 </div>
+
+                {/* FILTERS */}
+                <Card
+                    style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, marginBottom: 20 }}
+                    styles={{ body: { padding: '16px 20px' } }}
+                >
+                    <Row gutter={[16, 12]} align="middle">
+                        <Col xs={24} md={2}>
+                            <Space size={6} style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>
+                                <FilterOutlined />
+                                FILTERS
+                            </Space>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={7}>
+                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>ROOM</div>
+                            <Select
+                                value={selectedRoomId ?? 'ALL'}
+                                onChange={(val) => setSelectedRoomId(val === 'ALL' ? undefined : Number(val))}
+                                loading={roomsLoading}
+                                style={{ width: '100%' }}
+                                dropdownStyle={{ background: '#222', border: '1px solid rgba(255,255,255,0.08)' }}
+                            >
+                                <Option value="ALL">
+                                    <span style={{ color: '#fff' }}>All rooms</span>
+                                </Option>
+                                {rooms.map((room) => (
+                                    <Option key={room.id} value={room.id}>
+                                        <span style={{ color: '#fff' }}>{room.name}</span>
+                                    </Option>
+                                ))}
+                            </Select>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={9}>
+                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6, fontWeight: 600 }}>DATE RANGE</div>
+                            <RangePicker
+                                value={dateRange}
+                                allowClear={false}
+                                style={{ width: '100%' }}
+                                format="DD/MM/YYYY"
+                                disabledDate={(current) => !!current && current.isAfter(dayjs(), 'day')}
+                                onChange={(values) => {
+                                    if (values && values[0] && values[1]) {
+                                        setDateRange([values[0], values[1]]);
+                                    }
+                                }}
+                            />
+                        </Col>
+
+                        <Col xs={24} md={6} style={{ display: 'flex', alignItems: 'flex-end', height: '100%' }}>
+                            <Button
+                                icon={<UndoOutlined />}
+                                onClick={handleResetFilters}
+                                style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.15)', color: '#f0ece3' }}
+                            >
+                                Reset filters
+                            </Button>
+                        </Col>
+                    </Row>
+                </Card>
 
                 <Spin spinning={loading && !data}>
                     {!data && !loading ? (
@@ -327,7 +449,7 @@ export const StatisticsDashboard: React.FC = () => {
                                                     {Math.abs(revenueTrend).toFixed(1)}%
                                                 </Text>
                                                 <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
-                                                    vs 6-day average
+                                                    vs period average
                                                 </Text>
                                             </div>
                                         )}
@@ -417,13 +539,18 @@ export const StatisticsDashboard: React.FC = () => {
                                 </Col>
                             </Row>
 
-                            {/* 7-DAY CHART */}
+                            {/* RANGE CHART */}
                             <Card
                                 title={
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                                        <span style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>
-                                            LAST 7 DAYS PERFORMANCE
-                                        </span>
+                                        <div>
+                                            <div style={{ color: '#ffd700', fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>
+                                                PERFORMANCE — {formatDMY(dateRange[0])} to {formatDMY(dateRange[1])}
+                                            </div>
+                                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2, fontWeight: 500 }}>
+                                                {selectedRoomName}
+                                            </div>
+                                        </div>
                                         <div style={{ display: 'flex', gap: 20 }}>
                                             <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
                                                 Total revenue:{' '}
@@ -440,7 +567,7 @@ export const StatisticsDashboard: React.FC = () => {
                                 style={{ background: '#1a1a1a', borderColor: 'rgba(255,255,255,0.06)', marginBottom: 24 }}
                             >
                                 {chartData.length === 0 ? (
-                                    <Empty description={<span style={{ color: 'rgba(255,255,255,0.4)' }}>No sales in the last 7 days</span>} style={{ padding: '60px 0' }} />
+                                    <Empty description={<span style={{ color: 'rgba(255,255,255,0.4)' }}>No sales in the selected range</span>} style={{ padding: '60px 0' }} />
                                 ) : (
                                     <ResponsiveContainer width="100%" height={340}>
                                         <ComposedChart data={chartData} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
