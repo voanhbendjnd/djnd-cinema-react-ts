@@ -130,7 +130,7 @@ const TopMoviesPage: React.FC = () => {
             align: 'right' as const,
             render: (amount: number) => (
                 <span style={{ fontWeight: 700, color: '#10b981', fontSize: 14 }}>
-                    ${(amount / 1000000).toFixed(2)}
+                    {(amount)} VND
                 </span>
             ),
             sorter: (a: TopMovieProjection, b: TopMovieProjection) =>
@@ -170,7 +170,7 @@ const TopMoviesPage: React.FC = () => {
                     : 0;
                 return (
                     <span style={{ fontWeight: 600, color: '#f59e0b' }}>
-                        ${(perTicket / 1000000).toFixed(2)}
+                        {(perTicket)} VND
                     </span>
                 );
             },
@@ -221,8 +221,8 @@ const TopMoviesPage: React.FC = () => {
                         >
                             <Statistic
                                 title="Total Revenue"
-                                value={totalRevenue / 1000000}
-                                prefix="$"
+                                value={totalRevenue}
+                                prefix="VND"
                                 precision={2}
                                 valueStyle={{ color: '#10b981', fontSize: 24, fontWeight: 700 }}
                             />
