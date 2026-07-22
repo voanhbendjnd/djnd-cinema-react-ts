@@ -34,6 +34,7 @@ import VoucherListPage from "@/pages/user/promotion/page.tsx";
 import MyVouchersPage from "@/pages/user/you/voucher/page.tsx";
 import StatisticDashboard from "@/pages/user/statistic/statistic.dashboard.tsx";
 import TopMoviesPage from "@/pages/user/statistic/top.movies.tsx";
+import RefundPage from "@/pages/admin/refund/page.tsx";
 
 const AppRoutes: React.FC = () => {
     const { isAuthenticated, role } = useAuthStore();
@@ -87,6 +88,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="/admin/bookings/:id" element={<BookingDetail />} />
                     <Route path="/admin/statistics" element={<StatisticDashboard />} />
                     <Route path="/admin/statistics/movies" element={<TopMoviesPage />} />
+                    <Route path="/admin/refund" element={<RefundPage />} />
 
 
                 </Route>
@@ -107,6 +109,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="/manager/bookings/:id" element={<BookingDetail />} />
                     <Route path="/manager/statistics" element={<StatisticDashboard />} />
                     <Route path="/manager/statistics/movies" element={<TopMoviesPage />} />
+                    <Route path="/manager/refund" element={<RefundPage />} />
 
 
                 </Route>
@@ -119,6 +122,8 @@ const AppRoutes: React.FC = () => {
                     <Route path="/manager/booking" element={<POSBookingPage />} />
                     <Route path="/staff/booking" element={<POSBookingPage />} />
                     <Route path="/staff/ticket-lookup" element={<TicketLookup />} />
+                    <Route path="/staff/refund" element={<RefundPage />} />
+
                 </Route>
             </Route>
 

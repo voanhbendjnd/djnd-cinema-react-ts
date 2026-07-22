@@ -122,6 +122,11 @@ const AdminLayout: React.FC = () => {
                           name: 'Ticket Verification',
                           icon: <ScanOutlined />,
                       },
+                      {
+                          path: `/${roleName}/refund`,
+                          name: 'Refund',
+                          icon: <ScanOutlined />,
+                      },
                   ]
                   : []),
           ],
